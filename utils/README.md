@@ -10,3 +10,12 @@
 
 
 # Transform Function List
+1. Histogram Equaliztion
+    * Vanilla Histogram Equalization
+    * CLAHE
+2. Colour Space Transformation
+    * Grey Scale
+    * RGB
+    * HSV
+    * LAB
+3. Discrete Wavelet Transformations
