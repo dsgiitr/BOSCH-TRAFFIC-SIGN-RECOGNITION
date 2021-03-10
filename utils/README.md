@@ -19,3 +19,6 @@
     * HSV
     * LAB
 3. Discrete Wavelet Transformations
+
+# Volatile Function List
+1. Split input names
