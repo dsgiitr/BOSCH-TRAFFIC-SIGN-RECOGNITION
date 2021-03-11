@@ -48,7 +48,8 @@ def conf_matrix(df):
       vis[i, j] = [mat[i, j], []]
   
   for i, j, k, x, y  in data:
-      vis[int(i), int(j)][1].append(y)
+    if len(vis[int(i), int(j)][1]) < 16:
+        vis[int(i), int(j)][1].append(y)
 
   return vis
 
