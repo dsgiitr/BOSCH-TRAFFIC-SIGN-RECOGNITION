@@ -1,23 +1,25 @@
 import flask
-from flask import request, jsonify
+from flask import request, jsonify, send_file
 import json
-from utils.volatile import *
+from ..utils.volatile import *
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 
+@app.route("/InitialData", methods=["GET"])
+def getInitialData():
+    json_file = create_original_json()
+    return send_file(json_file)
 
-@app.route("/api/generate", methods=["POST"])
+@app.route("/GenerateDataset", methods=["POST"])
 def generateDataset():
-    json_data = json.loads(request.data)
-    transfer_to_modified(json_data)
-    return jsonify("success")
+    json_file = request.files['modified_structure.json']
+    transfer_to_modified(json_file)
 
+@app.route("/SplitData", methods=["POST"])
+def splitDataset():
+    json_data = request.data
+    transfer_to_split(json_data)
 
-@app.route("/", methods=["GET"])
-def ping():
-    return jsonify("ping")
-
-
-app.run()
-
+if __name__ == '__main__':
+   app.run(debug = True)

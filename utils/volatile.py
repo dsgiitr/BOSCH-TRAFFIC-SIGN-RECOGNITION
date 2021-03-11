@@ -4,7 +4,6 @@ import shutil
 import pandas as pd
 import json
 
-
 def name_split(data_req):
     data_df = []
     for data in data_req:
@@ -17,7 +16,6 @@ def name_split(data_req):
         data_df, columns=["Path", "Class Name", "Image Name", "Extension"]
     )
     return df
-
 
 def save_modified(image_df):
     rand_num = random.randint(100000, 1000000)
@@ -66,41 +64,39 @@ def create_json_file(root_dir, output_name):
             class_object_list.append(class_dict)
     class_object_list_sort = sorted(class_object_list, key = lambda i: int(i['name']))
     json_dict["folders"] = class_object_list_sort
-    #print(json.dumps(json_dict, indent=4))
     out_path = os.path.join(root_dir, output_name)
     with open(out_path, 'w') as json_file:
         json.dump(json_dict, json_file)
 
-def read_modified_json(json_data):
+def create_original_json():
+    root_dir = os.path.join('..', 'data', 'original')
+    output_name = 'structure.json'
+    create_json_file(root_dir, output_name)
+    return os.path.join(root_dir, output_name)
+
+def read_modified_json(json_file):
     data_req = []
-    mod_dict = json.loads(json_data)
-    for class_dict in mod_dict["folders"]:
-        class_name = class_dict["name"]
-        for img_dict in class_dict["images"]:
-            if img_dict["selected"] == "true":
-                img_name = img_dict["name"]
-                img_path = img_dict["path"]
-                data_req.append((img_path, class_name, img_name))
+    with open(json_file) as f:
+        mod_dict = json.load(f)
+        for class_dict in mod_dict["folders"]:
+            class_name = class_dict["name"]
+            for img_dict in class_dict["images"]:
+                if img_dict["selected"] == "true":
+                    img_name = img_dict["name"]
+                    img_path = img_dict["path"]
+                    data_req.append((img_path, class_name, img_name))
     return data_req
 
-def transfer_to_modified(json_data):
+def transfer_to_modified(json_file):
     modified_loc = "../data/modified/"
-    data_req = read_modified_json(json_data)
+    data_req = read_modified_json(json_file)
     image_df = name_split(data_req)
     save_modified(image_df, modified_loc)
 
-def create_train_json(root_dir, output_name, train_percent):
-    train_percent_dict = {}
-    train_percent_dict["training_data"] = str(train_percent)
-    out_path = os.path.join(root_dir, output_name)
-    with open(out_path, 'w') as json_file:
-        json.dump(train_percent_dict, json_file)
-
-def get_train_percentage(json_file):
-    with open(json_file) as f:
-        percent_dict = json.load(f)
-        train_percent = int(percent_dict["training_data"])
-        fraction = train_percent/100
+def get_train_percentage(json_data):
+    percent_dict = json.loads(json_data)
+    train_percent = int(percent_dict["training_data"])
+    fraction = train_percent/100
     return fraction
 
 def split_images(root_dir, train_dir, test_dir, train_fraction):
@@ -129,6 +125,9 @@ def split_images(root_dir, train_dir, test_dir, train_fraction):
                     new_loc = os.path.join(test_dir_path, str(img_name))
                     shutil.copy2(org_loc, new_loc)
 
-def transfer_to_split(json_file, modified_loc, split_train_loc, split_test_loc):
-    fraction = get_train_percentage(json_file)
+def transfer_to_split(json_data):
+    modified_loc = "../data/modified/"
+    split_train_loc = "../data/split/train"
+    split_test_loc = "../data/split/test"
+    fraction = get_train_percentage(json_data)
     split_images(modified_loc, split_train_loc, split_test_loc, fraction)
