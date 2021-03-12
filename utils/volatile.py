@@ -37,7 +37,6 @@ def save_modified(image_df):
             shutil.copy2(org_loc, new_loc)
 
 def create_json_file(root_dir, output_name):
-    print("started")
     NUM_CLASSES = 43
     json_dict = {}
     class_object_list = []
