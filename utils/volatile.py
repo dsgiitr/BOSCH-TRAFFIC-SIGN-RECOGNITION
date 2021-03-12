@@ -37,6 +37,7 @@ def save_modified(image_df):
             shutil.copy2(org_loc, new_loc)
 
 def create_json_file(root_dir, output_name):
+    print("started")
     NUM_CLASSES = 43
     json_dict = {}
     class_object_list = []
@@ -69,7 +70,8 @@ def create_json_file(root_dir, output_name):
         json.dump(json_dict, json_file)
 
 def create_original_json():
-    root_dir = os.path.join('..', 'data', 'original')
+    loc_path = os.path.dirname(os.path.realpath(__file__))
+    root_dir = os.path.join(loc_path, '..', 'data', 'original')
     output_name = 'structure.json'
     create_json_file(root_dir, output_name)
     return os.path.join(root_dir, output_name)
@@ -88,7 +90,8 @@ def read_modified_json(json_file):
     return data_req
 
 def transfer_to_modified(json_file):
-    modified_loc = "../data/modified/"
+    loc_path = os.path.dirname(os.path.realpath(__file__))
+    modified_loc = os.path.join(loc_path, "../data/modified/")
     data_req = read_modified_json(json_file)
     image_df = name_split(data_req)
     save_modified(image_df, modified_loc)
@@ -126,8 +129,9 @@ def split_images(root_dir, train_dir, test_dir, train_fraction):
                     shutil.copy2(org_loc, new_loc)
 
 def transfer_to_split(json_data):
-    modified_loc = "../data/modified/"
-    split_train_loc = "../data/split/train"
-    split_test_loc = "../data/split/test"
+    loc_path = os.path.dirname(os.path.realpath(__file__))
+    modified_loc = os.path.join(loc_path, "../data/modified/")
+    split_train_loc = os.path.join(loc_path, "../data/split/train")
+    split_test_loc = os.path.join(loc_path, "../data/split/test")
     fraction = get_train_percentage(json_data)
     split_images(modified_loc, split_train_loc, split_test_loc, fraction)
