@@ -166,7 +166,7 @@ def create_train_test_json():
     return main_dict
 
 def select_random_batch(root_dir, file_dir, select_fraction):
-    final_dir = os.path.join(root_dir, '..', 'data', 'aug_trans')
+    final_dir = os.path.join(root_dir, '..', 'data', 'batch')
     create_dir(final_dir)
     for _, classes, _ in os.walk(file_dir):
         for class_name in classes:
@@ -207,4 +207,46 @@ def create_manual_batch(data):
                 org_loc = img_dict["path"]
                 new_loc = os.path.join(final_dir, img_name)
                 shutil.copy2(org_loc, new_loc)
+
+def create_image_folders():
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    main_dir = os.path.join(root_dir, '..', 'data', 'batch')
+    org_dir = os.path.join(root_dir, '..', 'data', 'original_16')
+    create_dir(org_dir)
+    mod_dir = os.path.join(root_dir, '..', 'data', 'modified_16')
+    create_dir(mod_dir)
+    for _, _, images in os.walk(main_dir):
+        num_select = 16
+        select_images = random.sample(images, num_select)
+        for img_name in select_images:
+            org_loc = os.path.join(main_dir, img_name)
+            org_16_loc = os.path.join(org_dir, img_name)
+            mod_16_loc = os.path.join(mod_dir, img_name)
+            shutil.copy2(org_loc, org_16_loc)
+            shutil.copy2(org_loc, mod_16_loc)
+
+def create_img_dict(main_path):
+    main_dict = {}
+    img_object_list = []
+    for _, _, images in os.walk(main_path):
+        for img_name in images:
+            img_dict = {}
+            img_dict["name"] = img_name
+            path_img = os.path.join(main_path, img_name)
+            img_dict["path"] = path_img
+            img_object_list.append(img_dict)
+    main_dict["images"] = img_object_list
+    return main_dict
+
+def create_org16_json():
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    org_dir = os.path.join(root_dir, '..', 'data', 'original_16')
+    org16_dict = create_img_dict(org_dir)
+    return org16_dict
+
+def create_mod16_json():
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    mod_dir = os.path.join(root_dir, '..', 'data', 'modified_16')
+    mod16_dict = create_img_dict(mod_dir)
+    return mod16_dict
 
