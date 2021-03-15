@@ -4,6 +4,13 @@ import shutil
 import pandas as pd
 import json
 
+def create_dir(file_dir):
+    if os.path.exists(file_dir):
+        shutil.rmtree(file_dir)
+        os.mkdir(file_dir)
+    elif not os.path.exists(file_dir):
+        os.mkdir(file_dir)
+
 def name_split(data_req):
     data_df = []
     for data in data_req:
@@ -44,7 +51,6 @@ def create_json_file(root_dir, output_name):
             class_dict["name"] = class_name
             path = os.path.join(root_dir, class_name)
             class_dict["path"] = path
-            print(class_name)
             if int(class_name) < NUM_CLASSES:
                 modified = "false"
             else:
@@ -89,11 +95,7 @@ def read_modified_json(json_data):
 def transfer_to_modified(json_data):
     loc_path = os.path.dirname(os.path.realpath(__file__))
     modified_loc = os.path.join(loc_path, "..", "data", "modified")
-    if os.path.exists(modified_loc):
-        shutil.rmtree(modified_loc)
-        os.mkdir(modified_loc)
-    elif not os.path.exists(modified_loc):
-        os.mkdir(modified_loc)
+    create_dir(modified_loc)
     data_req = read_modified_json(json_data)
     image_df = name_split(data_req)
     save_modified(image_df, modified_loc)
@@ -135,16 +137,8 @@ def transfer_to_split(json_data):
     modified_loc = os.path.join(loc_path, "..", "data", "modified")
     split_train_loc = os.path.join(loc_path, "..", "data", "split", "train")
     split_test_loc = os.path.join(loc_path, "..", "data", "split", "test")
-    if os.path.exists(split_train_loc):
-        shutil.rmtree(split_train_loc)
-        os.mkdir(split_train_loc)
-    elif not os.path.exists(split_train_loc):
-        os.mkdir(split_train_loc)
-    if os.path.exists(split_test_loc):
-        shutil.rmtree(split_test_loc)
-        os.mkdir(split_test_loc)
-    elif not os.path.exists(split_test_loc):
-        os.mkdir(split_test_loc)
+    create_dir(split_train_loc)
+    create_dir(split_test_loc)
     fraction = get_train_percentage(json_data)
     split_images(modified_loc, split_train_loc, split_test_loc, fraction)
 
@@ -166,3 +160,61 @@ def create_train_test_json():
     main_dict["train"] = train_data
     main_dict["test"] = test_data
     return main_dict
+
+def select_random_batch(root_dir, file_dir, select_fraction):
+    final_dir = os.path.join(root_dir, '..', 'data', 'aug_trans')
+    create_dir(final_dir)
+    for _, classes, _ in os.walk(file_dir):
+        for class_name in classes:
+            path = os.path.join(file_dir, str(class_name))
+            for _, _, images in os.walk(path):
+                num_images = len(images)
+                num_select = int(select_fraction*num_images)
+                select_images = random.sample(images, num_select)
+                for img_name in select_images:
+                    org_loc = os.path.join(path, img_name)
+                    new_loc = os.path.join(final_dir, img_name)
+                    shutil.copy2(org_loc, new_loc)
+
+def create_random_batch(folder, percent):
+    loc_path = os.path.dirname(os.path.realpath(__file__))
+    modified_loc = os.path.join(loc_path, "..", "data", "modified")
+    split_train_loc = os.path.join(loc_path, "..", "data", "split", "train")
+    split_test_loc = os.path.join(loc_path, "..", "data", "split", "test")
+    if folder == "train":
+        file_dir = split_train_loc
+    elif folder == "test":
+        file_dir = split_test_loc
+    elif folder == "complete":
+        file_dir = modified_loc
+    fraction = percent/100
+    select_random_batch(loc_path, file_dir, fraction)
+
+def create_manual_batch(data):
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    final_dir = os.path.join(root_dir, '..', 'data', 'aug_trans')
+    create_dir(final_dir)
+    mod_dict = json.loads(data)
+    for img_dict in mod_dict["images"]:
+        img_name = img_dict["name"]
+        org_loc = img_dict["path"]
+        new_loc = os.path.join(final_dir, img_name)
+        shutil.copy2(org_loc, new_loc)
+
+def create_trial_json():
+    loc_path = os.path.dirname(os.path.realpath(__file__))
+    root_dir = os.path.join(loc_path, "..", "data", "modified")
+    json_dict = {}
+    img_object_list = []
+    for _, classes, _ in os.walk(root_dir, topdown=True):
+        for class_name in classes:
+            path = os.path.join(root_dir, class_name)
+            for _, _, images in os.walk(path, topdown=True):
+                for img_name in images:
+                    img_dict = {}
+                    img_dict["name"] = img_name
+                    path_img = os.path.join(path, img_name)
+                    img_dict["path"] = path_img
+                    img_object_list.append(img_dict)
+    json_dict["images"] = img_object_list
+    return json_dict
