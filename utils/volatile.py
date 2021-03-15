@@ -42,7 +42,7 @@ def save_modified(image_df, modified_loc):
             shutil.copy2(org_loc, new_loc)
 
 def create_json_file(root_dir, output_name):
-    NUM_CLASSES = 43
+    NUM_CLASSES = 5    
     json_dict = {}
     class_object_list = []
     for _, classes, _ in os.walk(root_dir, topdown=True):
@@ -63,7 +63,11 @@ def create_json_file(root_dir, output_name):
                     path_img = os.path.join(path, img_name)
                     img_dict["path"] = path_img
                     img_dict["can_be_modified"] = modified
-                    img_dict["selected"] = "true"
+                    if (int(img_name[0:-4]) % 2 == 0):
+                        selected = "true"
+                    else:
+                        selected = "false"
+                    img_dict["selected"] = selected
                     img_object_list.append(img_dict)
             class_dict["images"] = img_object_list
             class_object_list.append(class_dict)
