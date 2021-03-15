@@ -19,7 +19,7 @@ def gaussian_blur(img, kdim=8, var=5):
         timg = cv2.GaussianBlur(img, (kdim, kdim), var)
         return timg
     except:
-        if(ksize[0]%2==0):
+        if (kdim[0] % 2 == 0):
             print("kernel dimension cannot be even for gaussian blur.")
 
 def gaussian_noise(img, var=10, mean=0):
