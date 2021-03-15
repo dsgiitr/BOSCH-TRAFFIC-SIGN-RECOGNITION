@@ -6,6 +6,8 @@ import utils.volatile as util
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 
 @app.route("/InitialData", methods=["GET"])
@@ -15,16 +17,23 @@ def getInitialData():
     return send_file(json_file)
 
 
+@cross_origin()
 @app.route("/GenerateDataset", methods=["POST"])
 def generateDataset():
-    json_file = request.files['modified_structure.json']
-    util.transfer_to_modified(json_file)
+    dataset_json = json.loads(request.data)
+    util.transfer_to_modified(dataset_json)
+    resp = jsonify(success=True)
+    return resp
 
 
+@cross_origin()
 @app.route("/SplitData", methods=["POST"])
 def splitDataset():
     json_data = request.data
+    app.logger.info(json_data)
     util.transfer_to_split(json_data)
+    resp = jsonify(success=True)
+    return resp
 
 
 if __name__ == '__main__':
