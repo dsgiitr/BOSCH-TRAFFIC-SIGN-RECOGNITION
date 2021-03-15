@@ -17,14 +17,10 @@ def name_split(data_req):
     )
     return df
 
-def save_modified(image_df):
-    loc_path = os.path.dirname(os.path.realpath(__file__))
-    modified_loc = os.path.join(loc_path, "../data/modified/")
-    rand_num = random.randint(100000, 1000000)
-    BASE_PATH = modified_loc
+def save_modified(image_df, modified_loc):    
     class_list = image_df["Class Name"].unique()
     for class_name in class_list:
-        dir_path = os.path.join(BASE_PATH, str(class_name))
+        dir_path = os.path.join(modified_loc, str(class_name))
         if not os.path.exists(dir_path):
             os.mkdir(dir_path)
         rows = image_df.loc[image_df["Class Name"] == str(class_name)]
@@ -34,8 +30,8 @@ def save_modified(image_df):
         ext = rows["Extension"].values.tolist()
         for i in range(len(paths)):
             org_loc = paths[i]
-            file_name = str(img_names[i]) + "_" + str(rand_num) + "." + ext[i]
-            new_loc = os.path.join(BASE_PATH, str(class_names[i]), file_name)
+            file_name = str(img_names[i]) + "." + ext[i]
+            new_loc = os.path.join(modified_loc, str(class_names[i]), file_name)
             shutil.copy2(org_loc, new_loc)
 
 def create_json_file(root_dir, output_name):
@@ -48,6 +44,7 @@ def create_json_file(root_dir, output_name):
             class_dict["name"] = class_name
             path = os.path.join(root_dir, class_name)
             class_dict["path"] = path
+            print(class_name)
             if int(class_name) < NUM_CLASSES:
                 modified = "false"
             else:
@@ -79,7 +76,7 @@ def create_original_json():
 
 def read_modified_json(json_data):
     data_req = []
-    mod_dict = json_data
+    mod_dict = json.loads(json_data)
     for class_dict in mod_dict["folders"]:
         class_name = class_dict["name"]
         for img_dict in class_dict["images"]:
@@ -90,9 +87,16 @@ def read_modified_json(json_data):
     return data_req
 
 def transfer_to_modified(json_data):
+    loc_path = os.path.dirname(os.path.realpath(__file__))
+    modified_loc = os.path.join(loc_path, "..", "data", "modified")
+    if os.path.exists(modified_loc):
+        shutil.rmtree(modified_loc)
+        os.mkdir(modified_loc)
+    elif not os.path.exists(modified_loc):
+        os.mkdir(modified_loc)
     data_req = read_modified_json(json_data)
     image_df = name_split(data_req)
-    save_modified(image_df)
+    save_modified(image_df, modified_loc)
 
 def get_train_percentage(json_data):
     percent_dict = json.loads(json_data)
@@ -128,8 +132,37 @@ def split_images(root_dir, train_dir, test_dir, train_fraction):
 
 def transfer_to_split(json_data):
     loc_path = os.path.dirname(os.path.realpath(__file__))
-    modified_loc = os.path.join(loc_path, "../data/modified/")
-    split_train_loc = os.path.join(loc_path, "../data/split/train")
-    split_test_loc = os.path.join(loc_path, "../data/split/test")
+    modified_loc = os.path.join(loc_path, "..", "data", "modified")
+    split_train_loc = os.path.join(loc_path, "..", "data", "split", "train")
+    split_test_loc = os.path.join(loc_path, "..", "data", "split", "test")
+    if os.path.exists(split_train_loc):
+        shutil.rmtree(split_train_loc)
+        os.mkdir(split_train_loc)
+    elif not os.path.exists(split_train_loc):
+        os.mkdir(split_train_loc)
+    if os.path.exists(split_test_loc):
+        shutil.rmtree(split_test_loc)
+        os.mkdir(split_test_loc)
+    elif not os.path.exists(split_test_loc):
+        os.mkdir(split_test_loc)
     fraction = get_train_percentage(json_data)
     split_images(modified_loc, split_train_loc, split_test_loc, fraction)
+
+def create_train_test_json():
+    main_dict = {}
+    loc_path = os.path.dirname(os.path.realpath(__file__))
+    train_dir = os.path.join(loc_path, '..', 'data', 'split', 'train')
+    test_dir = os.path.join(loc_path, '..', 'data', 'split', 'test')
+    create_json_file(train_dir, 'train.json')
+    create_json_file(test_dir, 'test.json')
+    train_json = os.path.join(train_dir, 'train.json')
+    with open(train_json) as f:
+        train_dict = json.load(f)
+    train_data = json.dumps(train_dict)
+    test_json = os.path.join(test_dir, 'test.json')
+    with open(test_json) as f:
+        test_dict = json.load(f)
+    test_data = json.dumps(test_dict)
+    main_dict["train"] = train_data
+    main_dict["test"] = test_data
+    return main_dict
