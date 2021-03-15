@@ -192,29 +192,15 @@ def create_random_batch(folder, percent):
 
 def create_manual_batch(data):
     root_dir = os.path.dirname(os.path.realpath(__file__))
-    final_dir = os.path.join(root_dir, '..', 'data', 'aug_trans')
+    final_dir = os.path.join(root_dir, '..', 'data', 'batch')
     create_dir(final_dir)
     mod_dict = json.loads(data)
-    for img_dict in mod_dict["images"]:
-        img_name = img_dict["name"]
-        org_loc = img_dict["path"]
-        new_loc = os.path.join(final_dir, img_name)
-        shutil.copy2(org_loc, new_loc)
+    for class_dict in mod_dict["folders"]:
+        class_name = class_dict["name"]
+        for img_dict in class_dict["images"]:
+            if img_dict["selected"] == "true":
+                img_name = img_dict["name"]
+                org_loc = img_dict["path"]
+                new_loc = os.path.join(final_dir, img_name)
+                shutil.copy2(org_loc, new_loc)
 
-def create_trial_json():
-    loc_path = os.path.dirname(os.path.realpath(__file__))
-    root_dir = os.path.join(loc_path, "..", "data", "modified")
-    json_dict = {}
-    img_object_list = []
-    for _, classes, _ in os.walk(root_dir, topdown=True):
-        for class_name in classes:
-            path = os.path.join(root_dir, class_name)
-            for _, _, images in os.walk(path, topdown=True):
-                for img_name in images:
-                    img_dict = {}
-                    img_dict["name"] = img_name
-                    path_img = os.path.join(path, img_name)
-                    img_dict["path"] = path_img
-                    img_object_list.append(img_dict)
-    json_dict["images"] = img_object_list
-    return json_dict
