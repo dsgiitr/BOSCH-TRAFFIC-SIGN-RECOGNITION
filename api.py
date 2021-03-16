@@ -76,14 +76,14 @@ def getManual():
 @cross_origin()
 @app.route("/GetOrg16", methods=["GET"])
 def getOriginal16():
-    json_dict = util.create_org16_json()
-    return jsonify(json_dict)
+    json_file = util.create_org16_json()
+    return send_file(json_file)
 
 @cross_origin()
 @app.route("/GetMod16", methods=["GET"])
 def getModified16():
-    json_dict = util.create_mod16_json()
-    return jsonify(json_dict)
+    json_file = util.create_mod16_json()
+    return send_file(json_file)
 
 if __name__ == '__main__':
     app.run(debug=True)
