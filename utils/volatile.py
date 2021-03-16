@@ -165,19 +165,25 @@ def create_train_test_json():
     main_dict["test"] = test_data
     return main_dict
 
-def select_random_batch(root_dir, file_dir, select_fraction):
-    final_dir = os.path.join(root_dir, '..', 'data', 'batch')
+def select_random_batch(root_dir, file_dir, select_fraction, folder):
+    mod_dir = os.path.join(root_dir, '..', 'data', 'batch')
+    if not os.path.exists(mod_dir): 
+        os.mkdir(mod_dir)
+    final_dir = os.path.join(mod_dir, folder)
     create_dir(final_dir)
     for _, classes, _ in os.walk(file_dir):
         for class_name in classes:
             path = os.path.join(file_dir, str(class_name))
+            final_dir_path = os.path.join(final_dir, str(class_name))
+            if not os.path.exists(final_dir_path): 
+                os.mkdir(final_dir_path)
             for _, _, images in os.walk(path):
                 num_images = len(images)
                 num_select = int(select_fraction*num_images)
                 select_images = random.sample(images, num_select)
                 for img_name in select_images:
                     org_loc = os.path.join(path, img_name)
-                    new_loc = os.path.join(final_dir, img_name)
+                    new_loc = os.path.join(final_dir_path, img_name)
                     shutil.copy2(org_loc, new_loc)
 
 def create_random_batch(folder, percent):
@@ -185,28 +191,56 @@ def create_random_batch(folder, percent):
     modified_loc = os.path.join(loc_path, "..", "data", "modified")
     split_train_loc = os.path.join(loc_path, "..", "data", "split", "train")
     split_test_loc = os.path.join(loc_path, "..", "data", "split", "test")
+    fraction = percent/100
     if folder == "train":
         file_dir = split_train_loc
+        select_random_batch(loc_path, file_dir, fraction, folder)
     elif folder == "test":
         file_dir = split_test_loc
+        select_random_batch(loc_path, file_dir, fraction, folder)
     elif folder == "complete":
-        file_dir = modified_loc
-    fraction = percent/100
-    select_random_batch(loc_path, file_dir, fraction)
+        file_dir_1 = split_train_loc
+        file_dir_2 = split_test_loc
+        select_random_batch(loc_path, file_dir_1, fraction, "train")
+        select_random_batch(loc_path, file_dir_2, fraction, "test")
+    create_image_folders()
 
 def create_manual_batch(data):
-    root_dir = os.path.dirname(os.path.realpath(__file__))
-    final_dir = os.path.join(root_dir, '..', 'data', 'batch')
-    create_dir(final_dir)
     mod_dict = json.loads(data)
-    for class_dict in mod_dict["folders"]:
+    train_dict = json.loads(mod_dict["train"])
+    test_dict = json.loads(mod_dict["test"])
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    mod_dir = os.path.join(root_dir, '..', 'data', 'batch')
+    create_dir(mod_dir)
+    for class_dict in train_dict["folders"]:
         class_name = class_dict["name"]
         for img_dict in class_dict["images"]:
             if img_dict["selected"] == "true":
+                final_dir = os.path.join(mod_dir, "train")
+                if not os.path.exists(final_dir): 
+                    os.mkdir(final_dir)
+                final_dir_path = os.path.join(final_dir, str(class_name))
+                if not os.path.exists(final_dir_path): 
+                    os.mkdir(final_dir_path)
                 img_name = img_dict["name"]
                 org_loc = img_dict["path"]
-                new_loc = os.path.join(final_dir, img_name)
+                new_loc = os.path.join(final_dir_path, img_name)
                 shutil.copy2(org_loc, new_loc)
+    for class_dict in test_dict["folders"]:
+        class_name = class_dict["name"]
+        for img_dict in class_dict["images"]:
+            if img_dict["selected"] == "true":
+                final_dir = os.path.join(mod_dir, "test")
+                if not os.path.exists(final_dir): 
+                    os.mkdir(final_dir)
+                final_dir_path = os.path.join(final_dir, str(class_name))
+                if not os.path.exists(final_dir_path): 
+                    os.mkdir(final_dir_path)
+                img_name = img_dict["name"]
+                org_loc = img_dict["path"]
+                new_loc = os.path.join(final_dir_path, img_name)
+                shutil.copy2(org_loc, new_loc)
+    create_image_folders()
 
 def create_image_folders():
     root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -215,15 +249,25 @@ def create_image_folders():
     create_dir(org_dir)
     mod_dir = os.path.join(root_dir, '..', 'data', 'modified_16')
     create_dir(mod_dir)
-    for _, _, images in os.walk(main_dir):
-        num_select = 16
-        select_images = random.sample(images, num_select)
-        for img_name in select_images:
-            org_loc = os.path.join(main_dir, img_name)
-            org_16_loc = os.path.join(org_dir, img_name)
-            mod_16_loc = os.path.join(mod_dir, img_name)
-            shutil.copy2(org_loc, org_16_loc)
-            shutil.copy2(org_loc, mod_16_loc)
+    img_list = []
+    for _, types, _ in os.walk(main_dir):
+        for type in types:
+            type_dir = os.path.join(main_dir, str(type))
+            for _, classes, _ in os.walk(type_dir):
+                for class_name in classes:
+                    class_dir = os.path.join(type_dir, str(class_name))
+                    for _, _, images in os.walk(class_dir):
+                        for img_name in images:
+                            img_path = os.path.join(class_dir, img_name)
+                            img_list.append((img_name, img_path))
+    num_select = 16
+    select_images = random.sample(img_list, num_select)
+    for img in select_images:
+        org_loc = img[1]
+        org_16_loc = os.path.join(org_dir, img[0])
+        mod_16_loc = os.path.join(mod_dir, img[0])
+        shutil.copy2(org_loc, org_16_loc)
+        shutil.copy2(org_loc, mod_16_loc)
 
 def create_img_dict(main_path):
     main_dict = {}
