@@ -8,12 +8,12 @@ valid_df = []
 test_df = []
 
 # model should have model.datain, model.update_embeddings
-def train(model, train_loader, epochs, cudav):
+def train(model, train_loader,lr,lam,weight_d, epochs, cudav):
 
-  learning_rate = 0.001
+  learning_rate = lr
   momentum = 0.1
-  weight_decay = 0.0001
-  lm = 0.1
+  weight_decay = weight_d
+  lm = lam
   log_interval = 20
   optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()),lr=learning_rate,weight_decay=weight_decay)
 
