@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
+from PIL import Image
 from sklearn.metrics import confusion_matrix, f1_score, roc_curve
 from sklearn.preprocessing import label_binarize
 
+# Total dataset Scores
 def uncertainty_hist(df):
 
   target = df['label'].to_numpy().astype(np.int)
@@ -17,7 +19,7 @@ def uncertainty_hist(df):
       kernel_distance_wrong.append(conf[i])
   return {"correct": np.array(kernel_distance_normal),"wrong": np.array(kernel_distance_wrong)}
 
-
+# per class scores
 def uncertainty_bar(n_classes, df):
 
   target = df['label'].to_numpy().astype(np.int)
@@ -35,6 +37,19 @@ def uncertainty_bar(n_classes, df):
 
   return {"epistemic":np.array(epistemic),"aleatoric":np.array(aleatoric)}
 
+# per image score
+def uncertainty_scores(path, model, usecuda = True):
+  with torch.no_grad():
+    model.eval()
+    img = Image.open(path)
+    img = test_transform(img)
+    if (usecuda):
+      img = img.cuda()
+    img = img.unsqueeze(0)
+    output = model(img).squeeze().cpu()
+    epistemic, aleatoric = output.max(0)[0].mean().item(), abs(network.sigma.squeeze().item())
+    return epistemic, aleatoric
+
 
 def conf_matrix(df):
 
@@ -46,7 +61,7 @@ def conf_matrix(df):
   for i in range(m):
     for j in range(m):
       vis[i, j] = [mat[i, j], []]
-  
+
   for i, j, k, x, y  in data:
     if len(vis[int(i), int(j)][1]) < 16:
         vis[int(i), int(j)][1].append(y)
@@ -77,3 +92,78 @@ def roc(df1, logit):
     fpr[i], tpr[i], _ = roc_curve(y[:, i], logit[:, i])
 
   return fpr, tpr
+
+
+def stn_view(path, model, usecuda = True):
+    with torch.no_grad():
+      model.eval()
+      img = Image.open(path)
+      img = test_transform(img)
+      if (usecuda):
+        img = img.cuda()
+      img = img.unsqueeze(0)
+      output = model.stn(img).squeeze().cpu()
+      return output.permute(1,2,0).numpy()
+      #channel last numpy array hxwxc
+
+
+def gradcam(path, model, usecuda = True):
+  model.cam = True
+  st = 0.7
+  model.eval()
+  img = Image.open(path)
+  img = test_transform(img).unsqueeze(0)
+  if usecuda:
+    img = img.cuda()
+  out = model(img)
+  pred = out.argmax(1).squeeze()
+
+  out[:,pred].backward()
+  gradients = model.grad
+  pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
+  activations = model.activations(img).detach()
+  for i in range(activations.shape[1]):
+    activations[:, i, :, :] *= pooled_gradients[i]
+
+  with torch.no_grad():
+      heatmap = torch.mean(activations, dim=1).cpu().unsqueeze(1)
+      heatmap = norm(torch.relu(heatmap));
+      map = F.interpolate(heatmap,(img.shape[2],img.shape[2]),mode='bilinear')
+      map = map.squeeze().unsqueeze(2); img = img.squeeze().cpu().permute(1,2,0)*255; map = np.uint8(255 * map)
+      map = cv2.applyColorMap(map, cv2.COLORMAP_JET)
+      superimpose = (img + st*map)
+      superimpose /= superimpose.max()
+  model.cam = False
+  return superimpose.numpy()
+  #channel last numpy array hxwxc
+
+
+def gradcam_noise(path, model, usecuda = True):
+  model.cam = True
+  st = 0.7
+  model.eval()
+  img = Image.open(path)
+  img = test_transform(img).unsqueeze(0)
+  if usecuda:
+    img = img.cuda()
+  out = model(img)
+  pred = out.argmax(1).squeeze()
+
+  model.sigma.backward()
+  gradients = model.grad
+  pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
+  activations = model.activations(img).detach()
+  for i in range(activations.shape[1]):
+    activations[:, i, :, :] *= pooled_gradients[i]
+
+  with torch.no_grad():
+      heatmap = torch.mean(activations, dim=1).cpu().unsqueeze(1)
+      heatmap = norm(torch.relu(heatmap));
+      map = F.interpolate(heatmap,(img.shape[2],img.shape[2]),mode='bilinear')
+      map = map.squeeze().unsqueeze(2); img = img.squeeze().cpu().permute(1,2,0)*255; map = np.uint8(255 * map)
+      map = cv2.applyColorMap(map, cv2.COLORMAP_JET)
+      superimpose = (img + st*map)
+      superimpose /= superimpose.max()
+  model.cam = False
+  return superimpose.numpy()
+  #channel last numpy array hxwxc
