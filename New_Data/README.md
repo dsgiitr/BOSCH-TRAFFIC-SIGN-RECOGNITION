@@ -3,6 +3,12 @@
 
 https://www.kaggle.com/aadilmalik94/trafficsigns
 
-45-50 Informative Parking Signs
+38 Cycle Data
 
-51-52 Playgroud(True/False)
+39 Cycle + Kid Sign board
+
+45 Common Parking
+
+46 Wheel chair parking
+
+47 Car Parking
