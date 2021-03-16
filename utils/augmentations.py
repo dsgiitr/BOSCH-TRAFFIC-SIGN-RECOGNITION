@@ -64,7 +64,7 @@ def crop(img, input_pts=np.float32([[0, 0], [32, 0], [0, 32], [32, 32]])):
     timg = cv2.warpPerspective(img, M, (32, 32))
     return timg
 
-def random_erasing(img, region=np.array([[12, 12], [20, 12], [12, 20], [20, 20]]), randomize=False, grayIndex=0, mean=0, var=10):
+def random_erasing(img, region=np.array([[12, 12], [20, 12], [12, 20], [20, 20]]), randomize=True, grayIndex=0, mean=0, var=10):
     row, col, _ = img.shape
     sigma = var ** 0.5
     timg = img
