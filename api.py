@@ -97,6 +97,28 @@ def getModified16(timestamp):
 def send_js(path):
     return send_from_directory('data/', path)
 
+@cross_origin()
+@app.route("/SendTransform1", methods=["POST"])
+def apply1():
+    json_data = request.data
+    util.apply_single(json_data)
+    resp = jsonify(success=True)
+    return resp
+
+@cross_origin()
+@app.route("/SendTransform16", methods=["POST"])
+def apply16():
+    json_data = request.data
+    util.apply_16(json_data)
+    resp = jsonify(success=True)
+    return resp
+
+@cross_origin()
+@app.route("/SendTransformBatch", methods=["POST"])
+def applybatch():
+    util.apply_batch()
+    resp = jsonify(success=True)
+    return resp
 
 if __name__ == '__main__':
     app.run(debug=True)
