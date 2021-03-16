@@ -1,8 +1,12 @@
 import os
+import cv2
 import random
 import shutil
+import numpy as np
 import pandas as pd
 import json
+import utils.augmentations as ag
+import utils.transformations as tr
 
 def create_dir(file_dir):
     if os.path.exists(file_dir):
@@ -293,6 +297,11 @@ def create_img_dict(main_path):
             img_dict["name"] = img_name
             path_img = os.path.join(main_path, img_name)
             img_dict["path"] = path_img
+            if img_name == images[0]:
+                select = "true"
+            else:
+                select = "false"
+            img_dict["selected"] = select
             img_object_list.append(img_dict)
     main_dict["images"] = img_object_list
     return main_dict
@@ -315,308 +324,113 @@ def create_mod16_json():
         json.dump(mod16_dict, json_file)
     return out_path
 
-def add_aug(aug_dict):
+BATCH_NUM = 0
+Aug_List = []
+
+def apply_augmentation(img, aug, params):
+    if aug=="rotate": img_new = ag.rotate(img, angle=params["angle"])
+    elif aug=="horizontal_flip": img_new = ag.horizontal_flip(img)
+    elif aug=="vertical_flip": img_new = ag.vertical_flip(img)
+    elif aug=="blur": img_new = ag.average_blur(img, kdim=params["k_dim"])
+    elif aug=="sharpen": img_new = ag.sharpen(img, amount=params["amount"])
+    elif aug=="noise": img_new = ag.gaussian_noise(img, var=params["variance"], mean=params["mean"])
+    elif aug=="perspective_transform": img_new = ag.perspective_transform(img, input_pts=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
+    elif aug=="crop": img_new = ag.crop(img, input_pts=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
+    elif aug=="Hist_Eq": img_new = tr.Hist_Eq(img)
+    elif aug=="CLAHE": img_new = tr.CLAHE(img)
+    elif aug=="Grey": img_new = tr.Grey(img)
+    elif aug=="RGB": img_new = tr.RGB(img)
+    elif aug=="HSV": img_new = tr.HSV(img)
+    elif aug=="LAB": img_new = tr.LAB(img)
+    elif aug=="Discrete_Wavelet": img_new = tr.Discrete_Wavelet(img, mode=params["type"], level=params["level"])
+    elif aug=="add_brightness": img_new = tr.add_brightness(img)
+    elif aug=="add_shadow": img_new = tr.add_shadow(img, no_of_shadows=params["number_shadows"])
+    elif aug=="add_snow": img_new = tr.add_snow(img)
+    elif aug=="add_rain": img_new = tr.add_rain(img)
+    elif aug=="add_fog": img_new = tr.add_fog(img)
+    return img_new    
+
+def apply_single(data):
+    aug_dict = json.loads(data)
+    aug_type = aug_dict["name"]
+    aug_params = aug_dict["params"]
     root_dir = os.path.dirname(os.path.realpath(__file__))
-    batch_data = os.path.join(root_dir, 'batch_data.json')
-    with open(batch_data,'r+') as f:
-        file = json.load(f)
-        batch_no = len(file["batch"])-1
-        file["batch"][batch_no]["augmentations"].append(aug_dict)
-        f.seek(0)
-        json.dump(file, f, indent=4)
-        f.truncate()
+    main_path = os.path.join(root_dir, '..', 'data', 'modified_16')
+    for _, _, images in os.walk(main_path):
+        img_name = images[0]
+        path_img = os.path.join(main_path, img_name)
+        img = cv2.imread(path_img)
+        img_new = apply_augmentation(img, aug_type, aug_params)
+        name, ext = img_name.split(".")
+        name += "_" + str(BATCH_NUM)
+        new_img_name = name+ext
+        new_img_path = os.path.join(main_path, new_img_name)
+        if os.path.exists(path_img):
+            os.remove(path_img)
+        cv2.imwrite(new_img_path, img_new)
 
-def add_batch():
-    num_batch = "BATCH NO. = 0"
+def apply_16(data):
+    aug_dict = json.loads(data)
+    aug_type = aug_dict["name"]
+    aug_params = aug_dict["params"]
+    Aug_List.append((aug_type, aug_params))
     root_dir = os.path.dirname(os.path.realpath(__file__))
-    batch_data = os.path.join(root_dir, 'batch_data.json')
-    with open(batch_data,'r+') as f:
-        file = json.load(f)
-        batch_no = len(file["batch"])
-        data = {"batch no" : batch_no, "augmentations" : []}
-        file["batch"].append(data)
-        f.seek(0)
-        json.dump(file, f, indent=4)
-        f.truncate()
+    main_path = os.path.join(root_dir, '..', 'data', 'modified_16')
+    for _, _, images in os.walk(main_path):
+        for img_name in images[1:]:
+            path_img = os.path.join(main_path, img_name)
+            img = cv2.imread(path_img)
+            img_new = apply_augmentation(img, aug_type, aug_params)
+            name, ext = img_name.split(".")
+            name += "_" + str(BATCH_NUM)
+            new_img_name = name+ext
+            new_img_path = os.path.join(main_path, new_img_name)
+            if os.path.exists(path_img):
+                os.remove(path_img)
+            cv2.imwrite(new_img_path, img_new)
 
-def read_aug(aug_json):
+def apply_batch():
     root_dir = os.path.dirname(os.path.realpath(__file__))
-    org_dir = os.path.join(root_dir, '..', 'data', 'original_16')
-    mod_dir = os.path.join(root_dir, '..', 'data', 'modified_16')
-    batch_no = ""
-    with open(aug_json, 'r') as f:
-        file = json.load(f)
-        aug = file["name"]
-        param = file["parameters"]
-        add_aug(file)
-        if aug=="rotate": rotate(param, org_dir, mod_dir, batch_no)
-        elif aug=="horizontal_flip": horizontal_flip(param, org_dir, mod_dir, batch_no)
-        elif aug=="vertical_flip": vertical_flip(param, org_dir, mod_dir, batch_no)
-        elif aug=="blur": blur(param, org_dir, mod_dir, batch_no)
-        elif aug=="sharpen": sharpen(param, org_dir, mod_dir, batch_no)
-        elif aug=="noise": noise(param, org_dir, mod_dir, batch_no)
-        elif aug=="perspective_transform": perspective_transform(param, org_dir, mod_dir, batch_no)
-        elif aug=="crop": crop(param, org_dir, mod_dir, batch_no)
-        elif name=="Hist_Eq": Hist_Eq(param, org_dir, mod_dir, batch_no)
-        elif name=="CLAHE": CLAHE(param, org_dir, mod_dir, batch_no)
-        elif name=="Grey": Grey(param, org_dir, mod_dir, batch_no)
-        elif name=="RGB": RGB(param, org_dir, mod_dir, batch_no)
-        elif name=="HSV": HSV(param, org_dir, mod_dir, batch_no)
-        elif name=="LAB": LAB(param, org_dir, mod_dir, batch_no)
-        elif name=="Discrete_Wavelet": Discrete_Wavelet(param, org_dir, mod_dir, batch_no)
-        elif name=="add_brightness": add_brightness(param, org_dir, mod_dir, batch_no)
-        elif name=="add_shadow": add_shadow(param, org_dir, mod_dir, batch_no)
-        elif name=="add_snow": add_snow(param, org_dir, mod_dir, batch_no)
-        elif name=="add_rain": add_rain(param, org_dir, mod_dir, batch_no)
-        elif name=="add_fog": add_fog(param, org_dir, mod_dir, batch_no)
+    main_path = os.path.join(root_dir, '..', 'data', 'batch')
+    final_path = os.path.join(root_dir, '..', 'data', 'split')
+    for _, types, _ in os.walk(main_path):
+        for type in types:
+            type_path = os.path.join(main_path, type)
+            for _, classes, _ in os.walk(type_path):
+                for class_name in classes:
+                    class_path = os.path.join(type_path, str(class_name))
+                    for (aug_type, aug_params) in Aug_List:
+                        for _, _, images in os.walk(class_path):
+                            for img_name in images:
+                                path_img = os.path.join(main_path, img_name)
+                                img = cv2.imread(path_img)
+                                img_new = apply_augmentation(img, aug_type, aug_params)
+                                name, ext = img_name.split(".")
+                                if "_" not in name:
+                                    name += "_" + str(BATCH_NUM)
+                                new_img_name = name+ext
+                                new_img_path = os.path.join(main_path, new_img_name)
+                                if os.path.exists(path_img):
+                                    os.remove(path_img)
+                                cv2.imwrite(new_img_path, img_new)
+    for _, types, _ in os.walk(main_path):
+        for type in types:
+            type_path = os.path.join(main_path, type)
+            for _, classes, _ in os.walk(type_path):
+                for class_name in classes:
+                    class_path = os.path.join(type_path, str(class_name))
+                    for _, _, images in os.walk(class_path):
+                        for img_name in images:
+                            org_loc = os.path.join(class_path, img_name)
+                            new_loc = os.path.join(final_path, type_path, class_path, img_name)
+                            shutil.copy2(org_loc, new_loc)
+    update_batch_num()
+    reset_aug_list()
 
-def rotate(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = augment.rotate(cv2.imread(img_path), param["angle"])
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-    
-def horizontal_flip(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = augment.horizontal_flip(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
+def update_batch_num():
+    global BATCH_NUM
+    BATCH_NUM = BATCH_NUM + 1
 
-def vertical_flip(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = augment.vertical_flip(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def blur(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = augment.average_blur(cv2.imread(img_path), param["kdim"])
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def sharpen(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = augment.sharpen(cv2.imread(img_path), param["amount"])
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def noise(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = augment.gaussian_noise(cv2.imread(img_path), param["var"], param["mean"])
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def perspective_transform(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = augment.perspective_transform(cv2.imread(img_path), np.float32([param["pt1"], param["pt2"], param["pt3"], param["pt4"]]))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def Hist_Eq(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.Hist_Eq(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def CLAHE(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.CLAHE(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-        
-def Grey(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.Grey(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def RGB(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.RGB(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def HSV(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.HSV(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def LAB(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.LAB(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def Discrete_Wavelet(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.Discrete_Wavelet(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def add_brightness(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.add_brightness(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def add_shadow(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.add_shadow(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def add_snow(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.add_snow(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def add_rain(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.add_rain(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def add_fog(param, org_dir, mod_dir, batch_no):
-    for _, _, images in os.walk(org_dir):
-        for img_name in images:
-            img_path = os.path.join(mod_dir, img_name)
-            img = tf.add_fog(cv2.imread(img_path))
-            name, ext = img_path.split(".")
-            name += "_" + str(batch_no)
-            img_path = name+ext
-            cv2.imwrite(img_path, img)
-
-def augment_batch():
-    root_dir = os.path.dirname(os.path.realpath(__file__))
-    batch_data = os.path.join(root_dir, '..', 'data', 'batch_data.json')
-    batch_dir = os.path.join(root_dir, "..", 'data', 'batch')
-    with open(batch_data, 'r+') as f:
-        file = json.load(f)
-        batch_no = len(file["batch"])-1
-        for aug in file["batch"][batch_no]["augmentations"]:
-            name = aug["name"]
-            param = aug["parameters"]
-            if name=="rotate": rotate(param, batch_dir, batch_dir, batch_no)
-            elif name=="horizontal_flip": horizontal_flip(param, batch_dir, batch_dir, batch_no)
-            elif name=="vertical_flip": vertical_flip(param, batch_dir, batch_dir, batch_no)
-            elif name=="blur": blur(param, batch_dir, batch_dir, batch_no)
-            elif name=="sharpen": sharpen(param, batch_dir, batch_dir, batch_no)
-            elif name=="noise": noise(param, batch_dir, batch_dir, batch_no)
-            elif name=="perspective_transform": perspective_transform(param, batch_dir, batch_dir, batch_no)
-            elif name=="crop": crop(param, batch_dir, batch_dir, batch_no)
-            elif name=="Hist_Eq": Hist_Eq(param, batch_dir, batch_dir, batch_no)
-            elif name=="CLAHE": CLAHE(param, batch_dir, batch_dir, batch_no)
-            elif name=="Grey": Grey(param, batch_dir, batch_dir, batch_no)
-            elif name=="RGB": RGB(param, batch_dir, batch_dir, batch_no)
-            elif name=="HSV": HSV(param, batch_dir, batch_dir, batch_no)
-            elif name=="LAB": LAB(param, batch_dir, batch_dir, batch_no)
-            elif name=="Discrete_Wavelet": Discrete_Wavelet(param, batch_dir, batch_dir, batch_no)
-            elif name=="add_brightness": add_brightness(param, batch_dir, batch_dir, batch_no)
-            elif name=="add_shadow": add_shadow(param, batch_dir, batch_dir, batch_no)
-            elif name=="add_snow": add_snow(param, batch_dir, batch_dir, batch_no)
-            elif name=="add_rain": add_rain(param, batch_dir, batch_dir, batch_no)
-            elif name=="add_fog": add_fog(param, batch_dir, batch_dir, batch_no)
-
-def apply(aug_json):
-    root_dir = os.path.dirname(os.path.realpath(__file__))
-    org_dir = os.path.join(root_dir, '..', 'data', 'dummy_og')
-    mod_dir = os.path.join(root_dir, '..', 'data', 'dummy_mod')
-    batch_no = ""
-    with open(aug_json, 'r') as f:
-        file = json.load(f)
-        aug = file["name"]
-        param = file["parameters"]
-        if aug=="rotate": rotate(param, org_dir, mod_dir, batch_no)
-        elif aug=="horizontal_flip": horizontal_flip(param, org_dir, mod_dir, batch_no)
-        elif aug=="vertical_flip": vertical_flip(param, org_dir, mod_dir, batch_no)
-        elif aug=="blur": blur(param, org_dir, mod_dir, batch_no)
-        elif aug=="sharpen": sharpen(param, org_dir, mod_dir, batch_no)
-        elif aug=="noise": noise(param, org_dir, mod_dir, batch_no)
-        elif aug=="perspective_transform": perspective_transform(param, org_dir, mod_dir, batch_no)
-        elif aug=="crop": crop(param, org_dir, mod_dir, batch_no)
-        elif name=="Hist_Eq": Hist_Eq(param, org_dir, mod_dir, batch_no)
-        elif name=="CLAHE": CLAHE(param, org_dir, mod_dir, batch_no)
-        elif name=="Grey": Grey(param, org_dir, mod_dir, batch_no)
-        elif name=="RGB": RGB(param, org_dir, mod_dir, batch_no)
-        elif name=="HSV": HSV(param, org_dir, mod_dir, batch_no)
-        elif name=="LAB": LAB(param, org_dir, mod_dir, batch_no)
-        elif name=="Discrete_Wavelet": Discrete_Wavelet(param, org_dir, mod_dir, batch_no)
-        elif name=="add_brightness": add_brightness(param, org_dir, mod_dir, batch_no)
-        elif name=="add_shadow": add_shadow(param, org_dir, mod_dir, batch_no)
-        elif name=="add_snow": add_snow(param, org_dir, mod_dir, batch_no)
-        elif name=="add_rain": add_rain(param, org_dir, mod_dir, batch_no)
-        elif name=="add_fog": add_fog(param, org_dir, mod_dir, batch_no)
+def reset_aug_list():
+    global Aug_List
+    Aug_List = []
