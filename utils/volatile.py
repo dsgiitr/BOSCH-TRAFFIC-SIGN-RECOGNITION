@@ -41,14 +41,14 @@ def save_modified(image_df, modified_loc):
             new_loc = os.path.join(modified_loc, str(class_names[i]), file_name)
             shutil.copy2(org_loc, new_loc)
 
-def select_condition(name):
+def select_function(name):
     if (int(name) % 2 == 0):
         selected = "true"
     else:
         selected = "false"
     return selected
 
-def modified_condition(name, limit_class):
+def modified_function(name, limit_class):
     if int(name) < limit_class:
         modified = "false"
     else:
@@ -66,7 +66,7 @@ def create_json_file(root_dir, output_name, select_condition, modified_condition
             class_dict["path"] = path
             if modified_condition == True:
                 NUM_CLASSES = 5
-                modified = modified_condition(class_name, NUM_CLASSES)
+                modified = modified_function(class_name, NUM_CLASSES)
             else:
                 modified = "true"
             img_object_list = []
@@ -78,7 +78,7 @@ def create_json_file(root_dir, output_name, select_condition, modified_condition
                     img_dict["path"] = path_img
                     img_dict["can_be_modified"] = modified
                     if select_condition == True:
-                        selected = select_condition(img_name[0:-4])
+                        selected = select_function(img_name[0:-4])
                     else:
                         selected = "false"
                     img_dict["selected"] = selected
