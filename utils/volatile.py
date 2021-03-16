@@ -307,8 +307,7 @@ def create_img_dict(main_path):
     return main_dict
 
 def create_org16_json():
-    root_dir = os.path.dirname(os.path.realpath(__file__))
-    org_dir = os.path.join(root_dir, '..', 'data', 'original_16')
+    org_dir = os.path.join('data', 'original_16')
     org16_dict = create_img_dict(org_dir)
     out_path = os.path.join(org_dir, 'org16.json')
     with open(out_path, 'w') as json_file:
@@ -316,8 +315,7 @@ def create_org16_json():
     return out_path
 
 def create_mod16_json():
-    root_dir = os.path.dirname(os.path.realpath(__file__))
-    mod_dir = os.path.join(root_dir, '..', 'data', 'modified_16')
+    mod_dir = os.path.join('data', 'modified_16')
     mod16_dict = create_img_dict(mod_dir)
     out_path = os.path.join(mod_dir, 'mod16.json')
     with open(out_path, 'w') as json_file:

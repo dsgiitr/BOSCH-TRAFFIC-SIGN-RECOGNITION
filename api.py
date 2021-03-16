@@ -1,19 +1,20 @@
-import flask
+from flask import Flask, request, send_from_directory, request, jsonify, send_file, redirect, url_for
 from flask_cors import CORS, cross_origin
-from flask import request, jsonify, send_file, redirect, url_for
 import json
 import utils.volatile as util
 
-app = flask.Flask(__name__)
+app = Flask(__name__, static_url_path='')
 app.config["DEBUG"] = True
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
 
 @cross_origin()
 @app.route("/InitialData", methods=["GET"])
 def getInitialData():
     json_file = util.create_original_json()
     return send_file(json_file)
+
 
 @cross_origin()
 @app.route("/GenerateDataset", methods=["POST"])
@@ -23,6 +24,7 @@ def generateDataset():
     resp = jsonify(success=True)
     return resp
 
+
 @cross_origin()
 @app.route("/SplitData", methods=["POST"])
 def splitDataset():
@@ -31,9 +33,10 @@ def splitDataset():
     resp = jsonify(success=True)
     return resp
 
+
 @cross_origin()
-@app.route("/SendSplit", methods=["GET"])
-def getSplitData():
+@app.route("/SendSplit/<timestamp>", methods=["GET"])
+def getSplitData(timestamp):
     json_file = util.create_train_test_json()
     return send_file(json_file)
 
@@ -47,7 +50,8 @@ def getSplitData():
 #     elif type == "manual":
 #         return redirect("/ManualType")
 #     resp = jsonify(success=True)
-#     return resp 
+#     return resp
+
 
 @cross_origin()
 @app.route("/RandomType", methods=["POST"])
@@ -62,6 +66,7 @@ def getRandom():
     resp = jsonify(success=True)
     return resp
 
+
 @cross_origin()
 @app.route("/ManualType", methods=["POST"])
 def getManual():
@@ -73,17 +78,24 @@ def getManual():
         resp = jsonify(success=True)
     return resp
 
+
 @cross_origin()
-@app.route("/GetOrg16", methods=["GET"])
-def getOriginal16():
+@app.route("/GetOrg16/<timestamp>", methods=["GET"])
+def getOriginal16(timestamp):
     json_file = util.create_org16_json()
     return send_file(json_file)
 
+
 @cross_origin()
-@app.route("/GetMod16", methods=["GET"])
-def getModified16():
+@app.route("/GetMod16/<timestamp>", methods=["GET"])
+def getModified16(timestamp):
     json_file = util.create_mod16_json()
     return send_file(json_file)
+
+
+@app.route('/data/<path:path>')
+def send_js(path):
+    return send_from_directory('data/', path)
 
 @cross_origin()
 @app.route("/SendTransform1", methods=["POST"])

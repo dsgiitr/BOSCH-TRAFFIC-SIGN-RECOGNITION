@@ -133,3 +133,10 @@ dmypy.json
 .DS_Store?
 ._*
 .Spotlight-V100
+
+#image data files
+data/batch
+data/modified
+data/modified_16
+data/original_16
+data/split
