@@ -41,8 +41,21 @@ def save_modified(image_df, modified_loc):
             new_loc = os.path.join(modified_loc, str(class_names[i]), file_name)
             shutil.copy2(org_loc, new_loc)
 
-def create_json_file(root_dir, output_name):
-    NUM_CLASSES = 5    
+def select_function(name):
+    if (int(name) % 2 == 0):
+        selected = "true"
+    else:
+        selected = "false"
+    return selected
+
+def modified_function(name, limit_class):
+    if int(name) < limit_class:
+        modified = "false"
+    else:
+        modified = "true"
+    return modified
+
+def create_json_file(root_dir, output_name, select_condition, modified_condition):    
     json_dict = {}
     class_object_list = []
     for _, classes, _ in os.walk(root_dir, topdown=True):
@@ -51,8 +64,9 @@ def create_json_file(root_dir, output_name):
             class_dict["name"] = class_name
             path = os.path.join(root_dir, class_name)
             class_dict["path"] = path
-            if int(class_name) < NUM_CLASSES:
-                modified = "false"
+            if modified_condition == True:
+                NUM_CLASSES = 5
+                modified = modified_function(class_name, NUM_CLASSES)
             else:
                 modified = "true"
             img_object_list = []
@@ -63,8 +77,8 @@ def create_json_file(root_dir, output_name):
                     path_img = os.path.join(path, img_name)
                     img_dict["path"] = path_img
                     img_dict["can_be_modified"] = modified
-                    if (int(img_name[0:-4]) % 2 == 0):
-                        selected = "true"
+                    if select_condition == True:
+                        selected = select_function(img_name[0:-4])
                     else:
                         selected = "false"
                     img_dict["selected"] = selected
@@ -81,7 +95,7 @@ def create_original_json():
     loc_path = os.path.dirname(os.path.realpath(__file__))
     root_dir = os.path.join(loc_path, '..', 'data', 'original')
     output_name = 'structure.json'
-    create_json_file(root_dir, output_name)
+    create_json_file(root_dir, output_name, True, True)
     return os.path.join(root_dir, output_name)
 
 def read_modified_json(json_data):
@@ -151,8 +165,8 @@ def create_train_test_json():
     loc_path = os.path.dirname(os.path.realpath(__file__))
     train_dir = os.path.join(loc_path, '..', 'data', 'split', 'train')
     test_dir = os.path.join(loc_path, '..', 'data', 'split', 'test')
-    create_json_file(train_dir, 'train.json')
-    create_json_file(test_dir, 'test.json')
+    create_json_file(train_dir, 'train.json', False, False)
+    create_json_file(test_dir, 'test.json', False, False)
     train_json = os.path.join(train_dir, 'train.json')
     with open(train_json) as f:
         train_dict = json.load(f)
@@ -208,8 +222,8 @@ def create_random_batch(folder, percent):
 
 def create_manual_batch(data):
     mod_dict = json.loads(data)
-    train_dict = json.loads(mod_dict["train"])
-    test_dict = json.loads(mod_dict["test"])
+    train_dict = mod_dict["train"]
+    test_dict = mod_dict["test"]
     root_dir = os.path.dirname(os.path.realpath(__file__))
     mod_dir = os.path.join(root_dir, '..', 'data', 'batch')
     create_dir(mod_dir)
