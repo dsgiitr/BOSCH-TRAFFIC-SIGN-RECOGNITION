@@ -334,6 +334,7 @@ def apply_augmentation(img, aug, params):
     elif aug=="noise": img_new = ag.gaussian_noise(img, var=params["variance"], mean=params["mean"])
     elif aug=="perspective_transform": img_new = ag.perspective_transform(img, input_pts=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
     elif aug=="crop": img_new = ag.crop(img, input_pts=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
+    elif aug=="erase": img_new = ag.random_erasing(img, region=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
     elif aug=="Hist_Eq": img_new = tr.Hist_Eq(img)
     elif aug=="CLAHE": img_new = tr.CLAHE(img)
     elif aug=="Grey": img_new = tr.Grey(img)
@@ -360,12 +361,14 @@ def apply_single(data):
         img = cv2.imread(path_img)
         img_new = apply_augmentation(img, aug_type, aug_params)
         name, ext = img_name.split(".")
-        name += "_" + str(BATCH_NUM)
-        new_img_name = name+ext
-        new_img_path = os.path.join(main_path, new_img_name)
+        if "_" not in name:
+            name += "_" + str(BATCH_NUM)
+        new_img_name = name + "." + ext
         if os.path.exists(path_img):
             os.remove(path_img)
+        new_img_path = os.path.join(main_path, new_img_name)
         cv2.imwrite(new_img_path, img_new)
+        os.chdir(root_dir)
 
 def apply_16(data):
     aug_dict = json.loads(data)
@@ -380,8 +383,9 @@ def apply_16(data):
             img = cv2.imread(path_img)
             img_new = apply_augmentation(img, aug_type, aug_params)
             name, ext = img_name.split(".")
-            name += "_" + str(BATCH_NUM)
-            new_img_name = name+ext
+            if "_" not in name:
+                name += "_" + str(BATCH_NUM)
+            new_img_name = name + "." + ext
             new_img_path = os.path.join(main_path, new_img_name)
             if os.path.exists(path_img):
                 os.remove(path_img)
@@ -391,23 +395,23 @@ def apply_batch():
     root_dir = os.path.dirname(os.path.realpath(__file__))
     main_path = os.path.join(root_dir, '..', 'data', 'batch')
     final_path = os.path.join(root_dir, '..', 'data', 'split')
-    for _, types, _ in os.walk(main_path):
-        for type in types:
-            type_path = os.path.join(main_path, type)
-            for _, classes, _ in os.walk(type_path):
-                for class_name in classes:
-                    class_path = os.path.join(type_path, str(class_name))
-                    for (aug_type, aug_params) in Aug_List:
+    for (aug_type, aug_params) in Aug_List:
+        for _, types, _ in os.walk(main_path):
+            for type in types:
+                type_path = os.path.join(main_path, type)
+                for _, classes, _ in os.walk(type_path):
+                    for class_name in classes:
+                        class_path = os.path.join(type_path, str(class_name))
                         for _, _, images in os.walk(class_path):
                             for img_name in images:
-                                path_img = os.path.join(main_path, img_name)
+                                path_img = os.path.join(class_path, img_name)
                                 img = cv2.imread(path_img)
                                 img_new = apply_augmentation(img, aug_type, aug_params)
                                 name, ext = img_name.split(".")
                                 if "_" not in name:
                                     name += "_" + str(BATCH_NUM)
-                                new_img_name = name+ext
-                                new_img_path = os.path.join(main_path, new_img_name)
+                                new_img_name = name + "." + ext
+                                new_img_path = os.path.join(class_path, new_img_name)
                                 if os.path.exists(path_img):
                                     os.remove(path_img)
                                 cv2.imwrite(new_img_path, img_new)
@@ -420,7 +424,7 @@ def apply_batch():
                     for _, _, images in os.walk(class_path):
                         for img_name in images:
                             org_loc = os.path.join(class_path, img_name)
-                            new_loc = os.path.join(final_path, type_path, class_path, img_name)
+                            new_loc = os.path.join(final_path, type, str(class_name), img_name)
                             shutil.copy2(org_loc, new_loc)
     update_batch_num()
     reset_aug_list()
