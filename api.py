@@ -34,8 +34,8 @@ def splitDataset():
 @cross_origin()
 @app.route("/SendSplit", methods=["GET"])
 def getSplitData():
-    json_dict = util.create_train_test_json()
-    return jsonify(json_dict)
+    json_file = util.create_train_test_json()
+    return send_file(json_file)
 
 # @cross_origin()
 # @app.route("/SelectType", methods=["POST"])

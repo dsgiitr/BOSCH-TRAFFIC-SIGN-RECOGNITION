@@ -156,14 +156,15 @@ def create_train_test_json():
     train_json = os.path.join(train_dir, 'train.json')
     with open(train_json) as f:
         train_dict = json.load(f)
-    train_data = json.dumps(train_dict)
     test_json = os.path.join(test_dir, 'test.json')
     with open(test_json) as f:
         test_dict = json.load(f)
-    test_data = json.dumps(test_dict)
-    main_dict["train"] = train_data
-    main_dict["test"] = test_data
-    return main_dict
+    main_dict["train"] = train_dict
+    main_dict["test"] = test_dict
+    out_path = os.path.join(loc_path, '..', 'data', 'split', 'train_test.json')
+    with open(out_path, 'w') as json_file:
+        json.dump(main_dict, json_file)
+    return out_path
 
 def select_random_batch(root_dir, file_dir, select_fraction, folder):
     mod_dir = os.path.join(root_dir, '..', 'data', 'batch')
