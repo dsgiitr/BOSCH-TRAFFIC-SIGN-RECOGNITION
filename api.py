@@ -85,5 +85,28 @@ def getModified16():
     json_file = util.create_mod16_json()
     return send_file(json_file)
 
+@cross_origin()
+@app.route("/SendTransform1", methods=["POST"])
+def apply1():
+    json_data = request.data
+    util.apply_single(json_data)
+    resp = jsonify(success=True)
+    return resp
+
+@cross_origin()
+@app.route("/SendTransform16", methods=["POST"])
+def apply16():
+    json_data = request.data
+    util.apply_16(json_data)
+    resp = jsonify(success=True)
+    return resp
+
+@cross_origin()
+@app.route("/SendTransformBatch", methods=["POST"])
+def applybatch():
+    util.apply_batch()
+    resp = jsonify(success=True)
+    return resp
+
 if __name__ == '__main__':
     app.run(debug=True)
