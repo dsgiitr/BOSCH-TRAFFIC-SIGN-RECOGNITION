@@ -12,3 +12,9 @@ https://www.kaggle.com/aadilmalik94/trafficsigns
 46 Wheel chair parking
 
 47 Car Parking
+
+## Dataset Source 2 
+
+48 Mix of 2 signs of GTSRB
+
+49 Mix of 2 signs of GTSRB
