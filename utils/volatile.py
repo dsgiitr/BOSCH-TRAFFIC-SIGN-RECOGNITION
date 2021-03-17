@@ -383,7 +383,7 @@ def apply_16(data):
     aug_type = aug_dict["name"]
     aug_params = aug_dict["params"]
     add_aug_list((aug_type, aug_params))
-    #current_app.logger.info(Aug_List)
+    # current_app.logger.info(Aug_List)
     root_dir = os.path.dirname(os.path.realpath(__file__))
     main_path = os.path.join(root_dir, '..', 'data', 'modified_16')
     back_path = os.path.join(root_dir, '..', 'data', 'backup_16')
@@ -414,6 +414,7 @@ def apply_batch():
     main_path = os.path.join(root_dir, '..', 'data', 'batch')
     final_path = os.path.join(root_dir, '..', 'data', 'split')
     for (aug_type, aug_params) in Aug_List:
+        current_app.logger.info(aug_type)
         for _, types, _ in os.walk(main_path):
             for type in types:
                 type_path = os.path.join(main_path, type)
