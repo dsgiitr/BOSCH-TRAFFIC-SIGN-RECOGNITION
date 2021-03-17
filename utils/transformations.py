@@ -32,7 +32,7 @@ def LAB(img):
     img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     return img_lab
 
-def Discrete_Wavelet(img, mode='haar', level=1):
+def Discrete_Wavelet(img, mode='haar', level=4):
     img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_arr = np.float32(img_grey)
     img_arr /= 255
@@ -64,7 +64,7 @@ def _generate_shadow_coordinates(imshape, no_of_shadows=1):
         vertices_list.append(vertices)
     return vertices_list ## List of shadow vertices
 
-def add_shadow(img,no_of_shadows=1):
+def add_shadow(img,no_of_shadows=3):
     img_HLS = cv2.cvtColor(img,cv2.COLOR_RGB2HLS) ## Conversion to HLS
     mask = np.zeros_like(img)
     imshape = img.shape

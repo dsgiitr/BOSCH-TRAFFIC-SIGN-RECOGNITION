@@ -57,18 +57,6 @@ def getSplitData(timestamp):
     json_file = util.create_train_test_json()
     return send_file(json_file)
 
-# @cross_origin()
-# @app.route("/SelectType", methods=["POST"])
-# def getType():
-#     json_data = json.loads(request.data)
-#     type = json_data["data_selection"]
-#     if type == "random":
-#         return redirect("/RandomType")
-#     elif type == "manual":
-#         return redirect("/ManualType")
-#     resp = jsonify(success=True)
-#     return resp
-
 
 @cross_origin()
 @app.route("/RandomType", methods=["POST"])
@@ -115,10 +103,9 @@ def send_js(path):
     return send_from_directory('data/', path)
 
 @cross_origin()
-@app.route("/SendTransform1", methods=["POST"])
-def apply1():
-    json_data = request.data
-    util.apply_single(json_data)
+@app.route("/Undo", methods=["POST"])
+def undo():
+    util.undo_last_change()
     resp = jsonify(success=True)
     return resp
 
