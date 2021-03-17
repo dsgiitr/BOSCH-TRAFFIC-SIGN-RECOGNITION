@@ -7,7 +7,8 @@ import pandas as pd
 import json
 import utils.augmentations as ag
 import utils.transformations as tr
-
+from datetime import datetime
+from flask import current_app
 def create_dir(file_dir):
     if os.path.exists(file_dir):
         shutil.rmtree(file_dir)
@@ -292,6 +293,7 @@ def create_img_dict(main_path):
     main_dict = {}
     img_object_list = []
     for _, _, images in os.walk(main_path):
+        images.sort()
         for img_name in images:
             img_dict = {}
             img_dict["name"] = img_name
@@ -309,7 +311,7 @@ def create_img_dict(main_path):
 def create_org16_json():
     org_dir = os.path.join('data', 'original_16')
     org16_dict = create_img_dict(org_dir)
-    out_path = os.path.join(org_dir, 'org16.json')
+    out_path = os.path.join(org_dir,'..', 'org16.json')
     with open(out_path, 'w') as json_file:
         json.dump(org16_dict, json_file)
     return out_path
@@ -317,7 +319,7 @@ def create_org16_json():
 def create_mod16_json():
     mod_dir = os.path.join('data', 'modified_16')
     mod16_dict = create_img_dict(mod_dir)
-    out_path = os.path.join(mod_dir, 'mod16.json')
+    out_path = os.path.join(mod_dir,'..', 'mod16.json')
     with open(out_path, 'w') as json_file:
         json.dump(mod16_dict, json_file)
     return out_path
@@ -361,8 +363,9 @@ def apply_single(data):
         img = cv2.imread(path_img)
         img_new = apply_augmentation(img, aug_type, aug_params)
         name, ext = img_name.split(".")
-        if "_" not in name:
-            name += "_" + str(BATCH_NUM)
+        now = datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        name += "_" + current_time
         new_img_name = name + "." + ext
         if os.path.exists(path_img):
             os.remove(path_img)
@@ -377,16 +380,19 @@ def apply_16(data):
     Aug_List.append((aug_type, aug_params))
     root_dir = os.path.dirname(os.path.realpath(__file__))
     main_path = os.path.join(root_dir, '..', 'data', 'modified_16')
-    for _, _, images in os.walk(main_path):
-        for img_name in images[1:]:
-            path_img = os.path.join(main_path, img_name)
+    for root , _, images in os.walk(main_path):
+        images.sort()
+        for img_name in images:
+            path_img = os.path.join(root, img_name)
+            current_app.logger.info(path_img)
             img = cv2.imread(path_img)
             img_new = apply_augmentation(img, aug_type, aug_params)
             name, ext = img_name.split(".")
-            if "_" not in name:
-                name += "_" + str(BATCH_NUM)
+            now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+            name += "_" + current_time
             new_img_name = name + "." + ext
-            new_img_path = os.path.join(main_path, new_img_name)
+            new_img_path = os.path.join(root, new_img_name)
             if os.path.exists(path_img):
                 os.remove(path_img)
             cv2.imwrite(new_img_path, img_new)
@@ -408,8 +414,9 @@ def apply_batch():
                                 img = cv2.imread(path_img)
                                 img_new = apply_augmentation(img, aug_type, aug_params)
                                 name, ext = img_name.split(".")
-                                if "_" not in name:
-                                    name += "_" + str(BATCH_NUM)
+                                now = datetime.now()
+                                current_time = now.strftime("%H:%M:%S")
+                                name += "_" + current_time
                                 new_img_name = name + "." + ext
                                 new_img_path = os.path.join(class_path, new_img_name)
                                 if os.path.exists(path_img):
