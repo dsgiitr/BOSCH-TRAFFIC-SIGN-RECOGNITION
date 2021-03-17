@@ -171,25 +171,30 @@ def create_train_test_json():
     loc_path = os.path.dirname(os.path.realpath(__file__))
     train_dir = os.path.join(loc_path, '..', 'data', 'split', 'train')
     test_dir = os.path.join(loc_path, '..', 'data', 'split', 'test')
+    train_json = os.path.join(train_dir, 'train.json')
+    test_json = os.path.join(test_dir, 'test.json')
+    if os.path.exists(train_json):
+        os.remove(train_json)
+    if os.path.exists(test_json):
+        os.remove(test_json)
     create_json_file(train_dir, 'train.json', False, False)
     create_json_file(test_dir, 'test.json', False, False)
-    train_json = os.path.join(train_dir, 'train.json')
     with open(train_json) as f:
         train_dict = json.load(f)
-    test_json = os.path.join(test_dir, 'test.json')
     with open(test_json) as f:
         test_dict = json.load(f)
     main_dict["train"] = train_dict
     main_dict["test"] = test_dict
     out_path = os.path.join(loc_path, '..', 'data', 'split', 'train_test.json')
+    if os.path.exists(out_path):
+        os.remove(out_path)
     with open(out_path, 'w') as json_file:
         json.dump(main_dict, json_file)
     return out_path
 
 def select_random_batch(root_dir, file_dir, select_fraction, folder):
     mod_dir = os.path.join(root_dir, '..', 'data', 'batch')
-    if not os.path.exists(mod_dir): 
-        os.mkdir(mod_dir)
+    create_dir(mod_dir)
     final_dir = os.path.join(mod_dir, folder)
     create_dir(final_dir)
     for _, classes, _ in os.walk(file_dir):
@@ -281,7 +286,10 @@ def create_image_folders():
                         for img_name in images:
                             img_path = os.path.join(class_dir, img_name)
                             img_list.append((img_name, img_path))
-    num_select = 16
+    if len(img_list) > 16:
+        num_select = 16 
+    else:
+        num_select = len(img_list)
     select_images = random.sample(img_list, num_select)
     for img in select_images:
         org_loc = img[1]
@@ -340,7 +348,7 @@ def apply_augmentation(img, aug, params):
     elif aug=="noise": img_new = ag.gaussian_noise(img, var=params["variance"], mean=params["mean"])
     elif aug=="perspective_transform": img_new = ag.perspective_transform(img, input_pts=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
     elif aug=="crop": img_new = ag.crop(img, input_pts=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
-    elif aug=="erase": img_new = ag.random_erasing(img, region=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
+    elif aug=="erase": img_new = ag.random_erasing(img, randomize=bool(params["randomize"]),grayIndex=params["grayIndex"],mean=params["mean"],var=params["variance"],region=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
     elif aug=="Hist_Eq": img_new = tr.Hist_Eq(img)
     elif aug=="CLAHE": img_new = tr.CLAHE(img)
     elif aug=="Grey": img_new = tr.Grey(img)

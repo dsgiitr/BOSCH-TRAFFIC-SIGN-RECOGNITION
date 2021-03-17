@@ -27,8 +27,8 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 
 @cross_origin()
-@app.route("/InitialData", methods=["GET"])
-def getInitialData():
+@app.route("/InitialData/<timestamp>", methods=["GET"])
+def getInitialData(timestamp):
     json_file = util.create_original_json()
     return send_file(json_file)
 
