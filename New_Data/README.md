@@ -12,3 +12,5 @@ https://www.kaggle.com/aadilmalik94/trafficsigns
 46 Wheel chair parking
 
 47 Car Parking
+
+48 Mix of 2 signs of GTSRB
