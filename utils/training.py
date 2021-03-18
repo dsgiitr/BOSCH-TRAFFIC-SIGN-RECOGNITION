@@ -21,14 +21,18 @@ val_loader = []
 test_loader = []
 
 # model should have model.datain, model.update_embeddings
-def train(model, train_loader,val_loader,lr,lam,weight_d, epochs, cudav):
+def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
 
   learning_rate = lr
   momentum = 0.1
   weight_decay = weight_d
   lm = lam
   log_interval = 20
-  optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()),lr=learning_rate,weight_decay=weight_decay)
+  if opt == "Adam":
+      optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()),lr=learning_rate,weight_decay=weight_decay)
+  else:
+      optimizer = optim.SGD(filter(lambda p: p.requires_grad,model.parameters()),lr=learning_rate,weight_decay=weight_decay)
+
 
   for epoch in range(epochs):
     loss_=[]
@@ -191,7 +195,7 @@ os.system("tensorboard --logdir tensorboard")
 
 
 
-def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001):
+def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
     if(os.path.exists(os.path.join(path,'tensorboard'))):
         shutil.rmtree(os.path.join(path,'tensorboard'))
     os.mkdir(os.path.join(path,'tensorboard'))
@@ -202,7 +206,7 @@ def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_siz
 
     writer.add_embedding(data.view(batch_size,-1),metadata=target,label_img=data)
     writer.add_graph(model.cpu(), data)
-    train(model,train_loader,val_loader,learning_rate,lm,weight_decay, epochs, use_gpu)
+    train(model,train_loader,val_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
     validation(model,val_loader,use_gpu)
     test(model,test_loader,use_gpu)
 
