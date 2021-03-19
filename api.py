@@ -124,5 +124,26 @@ def applybatch():
     resp = jsonify(success=True)
     return resp
 
+@cross_origin()
+@app.route("/SendHP", methods=["POST"])
+def start_train():
+    json_data = request.data
+    util.start_training(json_data)
+    resp = jsonify(success=True)
+    return resp
+
+
+@cross_origin()
+@app.route("/GetLink/<timestamp>", methods=["GET"])
+def get_tb_link(timestamp):
+    json_dict = util.get_tensorboard()
+    return jsonify(json_dict)
+
+@cross_origin()
+@app.route("/CheckExit/<timestamp>", methods=["GET"])
+def check_exit(timestamp):
+    json_dict = util.check_exit_signal()
+    return jsonify(json_dict)
+
 if __name__ == '__main__':
     app.run(debug=True)

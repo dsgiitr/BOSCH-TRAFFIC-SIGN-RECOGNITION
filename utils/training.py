@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -6,6 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 import os, shutil
 import pandas as pd
 import numpy as np
+import utils.dataset_loader as dl
 
 valid_df = []
 test_df = []
@@ -19,6 +21,29 @@ writer = SummaryWriter('tensorboard')
 train_loader = []
 val_loader = []
 test_loader = []
+completed = "false"
+
+def trainlog(epoch, correct, loss):
+  print("epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss))
+
+def calc_gradient_penalty(x, y_pred_sum):
+    gradients = torch.autograd.grad(
+        outputs=y_pred_sum,
+        inputs=x,
+        grad_outputs=torch.ones_like(y_pred_sum),
+        create_graph=True,
+        retain_graph=True,
+    )[0]
+
+    gradients = gradients.flatten(start_dim=1)
+
+    # L2 norm
+    grad_norm = gradients.norm(2, dim=1)
+
+    # Two sided penalty
+    gradient_penalty = ((grad_norm - 1) ** 2).mean()
+
+    return gradient_penalty
 
 # model should have model.datain, model.update_embeddings
 def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
@@ -32,7 +57,7 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
       optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()),lr=learning_rate,weight_decay=weight_decay)
   else:
       optimizer = optim.SGD(filter(lambda p: p.requires_grad,model.parameters()),lr=learning_rate,weight_decay=weight_decay)
-
+  scheduler = optim.lr_scheduler.MultiStepLR(optimizer,[8,10,14],0.5)
 
   for epoch in range(epochs):
     loss_=[]
@@ -42,7 +67,8 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
       data, target = Variable(data), Variable(target).long()
       if cudav :
         torch.cuda.empty_cache()
-        data=data.cuda(); target=target.cuda();
+        data=data.cuda()
+        target=target.cuda()
       model.train()
 
       optimizer.zero_grad()
@@ -81,8 +107,6 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
     scheduler.step()
   if cudav:
     torch.cuda.empty_cache()
-
-
 
 
 def validation(model,val_loader,cudav):
@@ -136,8 +160,6 @@ def validation(model,val_loader,cudav):
     torch.cuda.empty_cache()
 
 
-
-
 def test(model,test_loader,cudav):
   model.eval()
   criterion = nn.CrossEntropyLoss()
@@ -188,20 +210,13 @@ def test(model,test_loader,cudav):
   if cudav:
     torch.cuda.empty_cache()
 
-def trainlog(epoch, correct, loss):
-    ;
-# tensorboard
-os.system("tensorboard --logdir tensorboard")
-
-
-
 def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
     if(os.path.exists(os.path.join(path,'tensorboard'))):
         shutil.rmtree(os.path.join(path,'tensorboard'))
     os.mkdir(os.path.join(path,'tensorboard'))
     use_gpu = True
-    train_loader,val_loader = create_loader('./data/split/train', batch_size=batch_size, shuffle=True, cudav = use_gpu, split = 0.1,sz = img_size)
-    test_loader = create_loader('./data/split/test', batch_size=batch_size, shuffle=False,  cudav = use_gpu, sz = img_size)
+    train_loader,val_loader = dl.create_loader('./data/split/train', batch_size=batch_size, shuffle=True, cudav = use_gpu, split = 0.1,sz = img_size)
+    test_loader = dl.create_loader('./data/split/test', batch_size=batch_size, shuffle=False,  cudav = use_gpu, sz = img_size)
     _,data,target = next(iter(train_loader))
 
     writer.add_embedding(data.view(batch_size,-1),metadata=target,label_img=data)
@@ -209,6 +224,8 @@ def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_siz
     train(model,train_loader,val_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
     validation(model,val_loader,use_gpu)
     test(model,test_loader,use_gpu)
+    global completed
+    completed = "true"
 
 def makemodel():
-    ;
+    pass

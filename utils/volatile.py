@@ -7,6 +7,7 @@ import pandas as pd
 import json
 import utils.augmentations as ag
 import utils.transformations as tr
+import utils.training as train
 from datetime import datetime
 from flask import current_app
 
@@ -460,3 +461,34 @@ def del_aug_list():
 def reset_aug_list():
     global Aug_List
     Aug_List = []
+
+def get_layers(layers):
+    layers_list = []
+    for layer in layers:
+        layer_type = layer["name"]
+        layers_list.append(layer_type)
+    return layers_list
+
+def start_training(data):
+    main_dict = json.loads(data)
+    optimizer = main_dict["Optimizer"]
+    epochs = main_dict["Epochs"]
+    batch_size = main_dict["Batch Size"]
+    lr = main_dict["Learning Rate"]
+    centroid_size = main_dict["Centroid Size"]
+    lm = main_dict["lm"]
+    weight_decay = main_dict["Weight Decay"]
+    layers = get_layers(main_dict["layers"])
+    train.makemodel(layers)
+    train.runtraining(epochs, batch_size, lr, centroid_size, lm, weight_decay, optimizer)
+
+def get_tensorboard():
+    link_dict = {}
+    link_dict["link"] = train.url
+    return link_dict
+
+def check_exit_signal():
+    end_dict = {}
+    end_dict["completed"] = train.completed
+    return end_dict
+    
