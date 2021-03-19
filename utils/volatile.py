@@ -471,13 +471,13 @@ def get_layers(layers):
 
 def start_training(data):
     main_dict = json.loads(data)
-    optimizer = main_dict["Optimizer"]
-    epochs = main_dict["Epochs"]
-    batch_size = main_dict["Batch Size"]
-    lr = main_dict["Learning Rate"]
-    centroid_size = main_dict["Centroid Size"]
+    optimizer = main_dict["optimizer"]
+    epochs = main_dict["epochs"]
+    batch_size = main_dict["batchSize"]
+    lr = main_dict["learningRate"]
+    centroid_size = main_dict["centroidSize"]
     lm = main_dict["lm"]
-    weight_decay = main_dict["Weight Decay"]
+    weight_decay = main_dict["weightDecay"]
     layers = get_layers(main_dict["layers"])
     train.makemodel(layers)
     train.runtraining(epochs, batch_size, lr, centroid_size, lm, weight_decay, optimizer)
