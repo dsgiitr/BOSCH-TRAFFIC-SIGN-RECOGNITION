@@ -4,6 +4,12 @@ from PIL import Image
 import cv2
 from sklearn.metrics import confusion_matrix, f1_score, roc_curve
 from sklearn.preprocessing import label_binarize
+from torchvision import transforms
+test_transform = transforms.Compose([
+    transforms.Resize((sz,sz)),
+    transforms.ToTensor()
+])
+
 
 # Total dataset Scores
 def uncertainty_hist(df):
