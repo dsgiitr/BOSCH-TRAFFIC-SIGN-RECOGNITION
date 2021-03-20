@@ -1,18 +1,26 @@
 import torch
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
-from sklearn.metrics import confusion_matrix, f1_score, roc_curve
+
+from sklearn.metrics import confusion_matrix, f1_score, roc_curve, precision_score
 from sklearn.preprocessing import label_binarize
 from torchvision import transforms
+from torchvision.utils import save_image
 import torch.nn.functional as F
 
-sz = 32
+sz = 40
 test_transform = transforms.Compose([
     transforms.Resize((sz,sz)),
     transforms.ToTensor()
 ])
+def norm(a):
+  a-=a.min()
+  a/=a.max()
+  return a
+
 
 
 # Total dataset Scores
@@ -32,6 +40,7 @@ def uncertainty_hist(df):
       wrong_labels.append(target[i])
       kernel_distance_wrong.append(conf[i])
   return [kernel_distance_normal, normal_labels, kernel_distance_normal, wrong_labels]
+
 
 # per class scores
 def uncertainty_bar(n_classes, df):
@@ -54,8 +63,9 @@ def uncertainty_bar(n_classes, df):
 
   return [epistemic, epistemic_label, aleatoric, aleatoric_label]
 
+
 # per image score
-def uncertainty_scores(path, model, usecuda = True):
+def uncertainty_scores(path, usecuda = True):
   with torch.no_grad():
     model.eval()
     img = Image.open(path)
@@ -79,11 +89,21 @@ def conf_matrix(df):
     for j in range(m):
       vis[i, j] = [mat[i, j], []]
 
+
   for i, j, k, x, y  in data:
     if len(vis[int(i), int(j)][1]) < 16:
         vis[int(i), int(j)][1].append(y)
 
-  return vis
+  cm = mat
+  cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+  cm = np.log(.0001 + cm)
+
+  plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+  plt.title('Log of normalized Confusion Matrix')
+  plt.ylabel('True label')
+  plt.xlabel('Predicted label')
+  plt.savefig("confusion.png")
+  return 'confusion.png'
 
 
 def f1_per_class(df):
@@ -91,9 +111,15 @@ def f1_per_class(df):
   data = df.to_numpy()
   return [data[:, 0], f1_score(data[:, 0], data[:, 1], average=None)]
 
+def precision_per_class(df):
+  data = df.to_numpy()
+  return precision_score(data[:,0],data[:,1],average=None)
+
+def acc_total(df):
+  data = df.to_numpy()
+  return accuracy_score(data[:, 0], data[:, 1])
 
 def f1_total(df):
-
   data = df.to_numpy()
   return f1_score(data[:, 0], data[:, 1], average='macro')
 
@@ -108,7 +134,7 @@ def roc(df1, logit):
   return fpr, tpr
 
 
-def stn_view(path, model, usecuda = True):
+def stn_view(path, usecuda = True):
     with torch.no_grad():
       model.eval()
       img = Image.open(path)
@@ -117,11 +143,11 @@ def stn_view(path, model, usecuda = True):
         img = img.cuda()
       img = img.unsqueeze(0)
       output = model.stn(img).squeeze().cpu()
-      return output.permute(1,2,0).numpy()
-      #channel last numpy array hxwxc
+      save_image(output,'stn.png')
+      return 'stn.png'
 
 
-def gradcam(path, model, usecuda = True):
+def gradcam(path, usecuda = True):
   model.cam = True
   st = 0.7
   model.eval()
@@ -147,12 +173,13 @@ def gradcam(path, model, usecuda = True):
       map = cv2.applyColorMap(map, cv2.COLORMAP_JET)
       superimpose = (img + st*map)
       superimpose /= superimpose.max()
+      superimpose = superimpose.permute(2,0,1)
+      save_image(superimpose,'gradcam.png')
   model.cam = False
-  return superimpose.numpy()
-  #channel last numpy array hxwxc
+  return 'gradcam.png'
 
 
-def gradcam_noise(path, model, usecuda = True):
+def gradcam_noise(path, usecuda = True):
   model.cam = True
   st = 0.7
   model.eval()
@@ -178,6 +205,52 @@ def gradcam_noise(path, model, usecuda = True):
       map = cv2.applyColorMap(map, cv2.COLORMAP_JET)
       superimpose = (img + st*map)
       superimpose /= superimpose.max()
+      superimpose = superimpose.permute(2,0,1)
+      save_image(superimpose,'gradcam_n.png')
   model.cam = False
-  return superimpose.numpy()
-  #channel last numpy array hxwxc
+  return 'gradcam_n.png'
+
+
+def violinplot():
+  i=0
+  w = [];b = []
+  model.eval()
+  for m in model.modules():
+      if isinstance(m, nn.Conv2d):
+          w.append(m.weight.data.reshape(-1).cpu().detach().numpy()[0:864])
+          b.append(m.bias.data.reshape(-1).cpu().detach().numpy()[0:32])
+          i=i+1
+          #print(m)
+      if i==7:
+          break
+  def adjacent_values(vals, q1, q3):
+        upper_adjacent_value = q3 + (q3 - q1) * 1.5
+        upper_adjacent_value = np.clip(upper_adjacent_value, q3, vals[-1])
+        lower_adjacent_value = q1 - (q3 - q1) * 1.5
+        lower_adjacent_value = np.clip(lower_adjacent_value, vals[0], q1)
+        return lower_adjacent_value, upper_adjacent_value
+  def violinplots(pl,title):
+    plt.title(title)
+    parts = plt.violinplot(
+            pl, showmeans=False, showmedians=False,
+            showextrema=False)
+    for pc in parts['bodies']:
+        pc.set_facecolor('#D43F3A')
+        pc.set_edgecolor('black')
+        pc.set_alpha(1)
+    quartile1, medians, quartile3 = np.percentile(pl, [25, 50, 75], axis=1)
+    whiskers = np.array([
+        adjacent_values(sorted_array, q1, q3)
+        for sorted_array, q1, q3 in zip(pl, quartile1, quartile3)])
+    whiskers_min, whiskers_max = whiskers[:, 0], whiskers[:, 1]
+    inds = np.arange(1, len(medians) + 1)
+    plt.scatter(inds, medians, marker='o', color='white', s=30, zorder=3)
+    plt.vlines(inds, quartile1, quartile3, color='k', linestyle='-', lw=5)
+    plt.vlines(inds, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
+  plt.figure(figsize=(10,9))
+  plt.subplot(2,1,1)
+  violinplots(w,'Violin plot of Conv Weights')
+  plt.subplot(2,1,2)
+  violinplots(b,'Violin plot of Conv Biases')
+  plt.savefig('violinplot.png')
+  return 'violinplot.png'

@@ -88,16 +88,16 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
         model.update_embeddings(data,F.one_hot(target.long(),43).float())
 
       if batch_idx % log_interval == 0:
-        trainlog(batch_idx,100.*correct/len(data),loss.item())
+        trainlog('batch',batch_idx,100.*correct/len(data),loss.item())
         writer.add_scalar('Batch / Training loss',
                             loss.item(),
                             epoch * len(train_loader) + batch_idx)
-        writer.add_scalar('Batch / Correct',
+        writer.add_scalar('Batch / Training Correct',
                             100.*correct/len(data),
                             epoch * len(train_loader) + batch_idx)
 
-    v_correct, v_loss = validation(model, val_loader,True)
-    trainlog(epoch,100.*correct_/len(train_loader.dataset),np.array(loss_).mean())
+    v_correct, v_loss = validation(model, val_loader,cudav)
+    trainlog('epoch',epoch,100.*correct_/len(train_loader.dataset),np.array(loss_).mean())
     writer.add_scalars('Epoch / Loss',
                       {"train":np.array(loss_).mean(),
                         "validation": v_loss},epoch)
@@ -112,6 +112,7 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
 def validation(model,val_loader,cudav):
   model.eval()
   criterion = nn.CrossEntropyLoss()
+  global v_logit
   y_true = []
   y = []
   y_conf = []
@@ -159,10 +160,14 @@ def validation(model,val_loader,cudav):
   if cudav:
     torch.cuda.empty_cache()
 
+  trainlog('validation',1,100.*correct_/len(val_loader.dataset),np.array(val_loss_).mean())
+  return 100.*correct_/len(val_loader.dataset),np.array(val_loss_).mean()
+
 
 def test(model,test_loader,cudav):
   model.eval()
   criterion = nn.CrossEntropyLoss()
+  global t_logit
   y_true = []
   y = []
   y_conf = []
@@ -210,22 +215,42 @@ def test(model,test_loader,cudav):
   if cudav:
     torch.cuda.empty_cache()
 
-def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
-    if(os.path.exists(os.path.join(path,'tensorboard'))):
-        shutil.rmtree(os.path.join(path,'tensorboard'))
-    os.mkdir(os.path.join(path,'tensorboard'))
-    use_gpu = True
-    train_loader,val_loader = dl.create_loader('./data/split/train', batch_size=batch_size, shuffle=True, cudav = use_gpu, split = 0.1,sz = img_size)
-    test_loader = dl.create_loader('./data/split/test', batch_size=batch_size, shuffle=False,  cudav = use_gpu, sz = img_size)
-    _,data,target = next(iter(train_loader))
 
-    writer.add_embedding(data.view(batch_size,-1),metadata=target,label_img=data)
-    writer.add_graph(model.cpu(), data)
+def trainlog(message,epoch, correct, loss):
+    print(message + " epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss));
+
+
+
+
+def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
+    folder = 'tensorboard'
+    for filename in os.listdir(folder):
+      file_path = os.path.join(folder, filename)
+      try:
+          if os.path.isfile(file_path) or os.path.islink(file_path):
+              os.unlink(file_path)
+          elif os.path.isdir(file_path):
+              shutil.rmtree(file_path)
+      except Exception as e:
+          print('Failed to delete %s. Reason: %s' % (file_path, e))
+    # tensorboard
+    os.system("tensorboard --reload_interval 15 --logdir tensorboard")
+
+    train_loader = create_loader('split/train', batch_size=batch_size, shuffle=True,  sz = img_size)
+    val_loader = create_loader('split/val', batch_size=batch_size, shuffle=False, sz = img_size)
+    for _,data,target in train_loader:
+      writer.add_embedding(data.view(data.shape[0],-1),metadata=target,label_img=data)
+      writer.add_graph(model.cpu(), data)
+      break
+    if use_gpu:
+      model.cuda()
     train(model,train_loader,val_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
     validation(model,val_loader,use_gpu)
-    test(model,test_loader,use_gpu)
     global completed
     completed = "true"
+
+
+
 
 def makemodel():
     pass
