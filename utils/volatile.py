@@ -5,9 +5,11 @@ import shutil
 import numpy as np
 import pandas as pd
 import json
+import utils.dataset_loader as dlr
 import utils.augmentations as ag
 import utils.transformations as tr
 import utils.training as train
+import utils.analysis as al
 from datetime import datetime
 from flask import current_app
 
@@ -555,3 +557,200 @@ def check_exit_signal():
     end_dict = {}
     end_dict["completed"] = train.completed
     return end_dict
+
+def create_uncertainty_hist_dict():
+    #df = train.test_df
+    #[h_1, l_1, h_2, l_2] = al.uncertainty_hist(df)
+    h_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_1 = [1,3,5,7,9,11,13,15]
+    h_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_2 = [2,4,6,8,10,12,14,16]
+    correct_dict = {}
+    correct_dict["labels"] = l_1
+    correct_dict["data"] = h_1
+    wrong_dict = {}
+    wrong_dict["labels"] = l_2
+    wrong_dict["data"] = h_2
+    main_dict = {}
+    main_dict["correct"] = correct_dict
+    main_dict["wrong"] = wrong_dict
+    return main_dict
+
+def create_uncertainty_bar_dict():
+    #root_dir = os.path.dirname(os.path.realpath(__file__))
+    #loc_path = os.path.join(root_dir, '..', 'data', 'modified')
+    #n_classes = len(dlr.find_classes(loc_path)[0])
+    #df = train.test_df
+    #[b_1, l_1, b_2, l_2] = al.uncertainty_bar(n_classes, df)
+    b_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_1 = [1,2,3,4,5,6,7,8]
+    b_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_2 = [1,2,3,4,5,6,7,8]
+    epistemic_dict = {}
+    epistemic_dict["labels"] = l_1
+    epistemic_dict["data"] = b_1
+    aleatoric_dict = {}
+    aleatoric_dict["labels"] = l_2
+    aleatoric_dict["data"] = b_2
+    main_dict = {}
+    main_dict["epistemic"] = epistemic_dict
+    main_dict["aleatoric"] = aleatoric_dict
+    return main_dict
+
+def create_f1_bar_dict():
+    #df = train.test_df
+    #[l, b] = al.f1_per_class(df)
+    #s = al.f1_total(df)
+    b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l = [1,2,3,4,5,6,7,8]
+    s = 0.99
+    f1_class_dict = {}
+    f1_class_dict["labels"] = l
+    f1_class_dict["data"] = b
+    main_dict = {}
+    main_dict["f1_class"] = f1_class_dict
+    main_dict["score"] = s
+    return main_dict
+
+def create_precision_bar_dict():
+    #df = train.test_df
+    #[l, b] = al.precision_per_class(df)
+    #s = al.f1_total(df)
+    b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l = [1,2,3,4,5,6,7,8]
+    f1_class_dict = {}
+    f1_class_dict["labels"] = l
+    f1_class_dict["data"] = b
+    main_dict = {}
+    main_dict["precision_class"] = f1_class_dict
+    return main_dict
+
+def get_cm():
+    #df = train.test_df
+    #img_path = al.conf_matrix(df)
+    loc_path = os.path.join('data', 'analysis')
+    img_name = os.path.join(loc_path, "confusion.png")
+    return img_name
+
+def create_roc_dict():
+    #df = train.test_df
+    #logit = train.t_logit
+    #fpr, tpr = al.roc(df, logit)
+    fpr, tpr = [ [0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3] ], [ [0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6] ]
+    roc_list = []
+    for i in range(len(fpr)):
+        roc_class_list = []
+        for j in range(len(fpr[i])):
+            roc_dict = {}
+            roc_dict["x"] = fpr[i][j]
+            roc_dict["y"] = tpr[i][j]
+            roc_class_list.append(roc_dict)
+        roc_list.append(roc_class_list)
+    main_dict = {}
+    main_dict["roc_curve"] = roc_list
+    return main_dict
+
+def get_stn(path):
+    #path = al.stn_view(path)
+    path = os.path.join('data','analysis','stn.png')
+    return path
+
+def get_gradcam(path):
+    #path = al.gradcam(path)
+    path = os.path.join('data','analysis','gradcam.png')
+    return path
+
+def get_gradcam_noise(path):
+    #path = al.gradcam_noise(path)
+    path = os.path.join('data','analysis','gradcam_n.png')
+    return path
+
+def get_uc_scores(path):
+    #epistemic, aleatoric = al.uncertainty_scores(path)
+    epistemic, aleatoric = 0.92, 0.93
+    uc_dict = {}
+    uc_dict["epistemic"] = epistemic
+    uc_dict["aleatoric"] = aleatoric
+    return uc_dict
+
+def get_graphs_1():
+    graph_dict = {}
+    f1_bar = create_f1_bar_dict()
+    roc_line = create_roc_dict()
+    precision_bar = create_precision_bar_dict()
+    graph_dict["F1"] = f1_bar
+    graph_dict["ROC"] = roc_line
+    graph_dict["Precision"] = precision_bar
+    return graph_dict
+
+def get_graphs_2():
+    graph_dict = {}
+    cm = get_cm()
+    graph_dict["CM"] = cm
+    return graph_dict
+
+def get_graphs_3():
+    graph_dict = {}
+    uc_hist = create_uncertainty_hist_dict()
+    uc_bar = create_uncertainty_bar_dict()
+    graph_dict["UC_Hist"] = uc_hist
+    graph_dict["UC_Bar"] = uc_bar
+    return graph_dict
+
+def apply_augs(path, angle, kdim, amount, mean, variance):
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    ext = path.split(".")[1]
+    img_name = "original." + ext 
+    mod_img_name = "modified." + ext
+    final_path = os.path.join(root_dir, '..', 'data', 'analysis', img_name)
+    final_mod_path = os.path.join(root_dir, '..', 'data', 'analysis', mod_img_name)
+    if os.path.exists(final_path):
+        os.remove(final_path)
+    if os.path.exists(final_mod_path):
+        os.remove(final_mod_path)
+    shutil.copy2(path, final_path)
+    img = cv2.imread(final_path)
+    img_rotate = ag.rotate(img, angle=angle)
+    img_blur = ag.average_blur(img_rotate, kdim=kdim)
+    img_sharpen = ag.sharpen(img_blur, amount=amount)
+    img_noise = ag.gaussian_noise(img_sharpen, var=variance, mean=mean)
+    cv2.imwrite(final_mod_path, img_noise)
+    req_org_path = os.path.join('data', 'analysis', img_name)
+    req_mod_path = os.path.join('data', 'analysis', mod_img_name)
+    return req_org_path, req_mod_path
+
+def get_analysis_info(data):
+    req_dict = json.loads(data)
+    img_path = req_dict["img_path"]
+    angle = req_dict["rotate"]["angle"]
+    k_dim = req_dict["blur"]["k_dim"]
+    amount = req_dict["sharpen"]["amount"]
+    mean = req_dict["noise"]["mean"]
+    variance = req_dict["noise"]["variance"]
+    final_dict = {}
+    org_path, mod_path = apply_augs(img_path, angle, k_dim, amount, mean, variance)
+    stn_path = get_stn(mod_path)
+    gradcam_path = get_gradcam(mod_path)
+    gradcam_noise_path = get_gradcam_noise(mod_path)
+    uc_scores = get_uc_scores(mod_path)
+    final_dict["original"] = org_path
+    final_dict["modified"] = mod_path
+    final_dict["stn"] = stn_path
+    final_dict["gradcam"] = gradcam_path
+    final_dict["gradcam_noise"] = gradcam_noise_path
+    final_dict["uc_scores"] = uc_scores
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    json_path = os.path.join(root_dir, '..', 'data', 'analysis', 'analysis.json')
+    if os.path.exists(json_path):
+        os.remove(json_path)
+    with open(json_path, 'w') as json_file:
+        json.dump(final_dict, json_file)
+
+def get_graphs_4():
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    json_path = os.path.join(root_dir, '..', 'data', 'analysis', 'analysis.json')
+    return json_path
+
+
+
+

@@ -22,6 +22,7 @@ train_loader = []
 val_loader = []
 test_loader = []
 completed = "false"
+sz = 40
 
 def trainlog(epoch, correct, loss):
   print("epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss))
@@ -88,16 +89,16 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
         model.update_embeddings(data,F.one_hot(target.long(),43).float())
 
       if batch_idx % log_interval == 0:
-        trainlog(batch_idx,100.*correct/len(data),loss.item())
+        trainlog('batch',batch_idx,100.*correct/len(data),loss.item())
         writer.add_scalar('Batch / Training loss',
                             loss.item(),
                             epoch * len(train_loader) + batch_idx)
-        writer.add_scalar('Batch / Correct',
+        writer.add_scalar('Batch / Training Correct',
                             100.*correct/len(data),
                             epoch * len(train_loader) + batch_idx)
 
-    v_correct, v_loss = validation(model, val_loader,True)
-    trainlog(epoch,100.*correct_/len(train_loader.dataset),np.array(loss_).mean())
+    v_correct, v_loss = validation(model, val_loader,cudav)
+    trainlog('epoch',epoch,100.*correct_/len(train_loader.dataset),np.array(loss_).mean())
     writer.add_scalars('Epoch / Loss',
                       {"train":np.array(loss_).mean(),
                         "validation": v_loss},epoch)
@@ -112,6 +113,7 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
 def validation(model,val_loader,cudav):
   model.eval()
   criterion = nn.CrossEntropyLoss()
+  global v_logit
   y_true = []
   y = []
   y_conf = []
@@ -159,10 +161,14 @@ def validation(model,val_loader,cudav):
   if cudav:
     torch.cuda.empty_cache()
 
+  trainlog('validation',1,100.*correct_/len(val_loader.dataset),np.array(val_loss_).mean())
+  return 100.*correct_/len(val_loader.dataset),np.array(val_loss_).mean()
+
 
 def test(model,test_loader,cudav):
   model.eval()
   criterion = nn.CrossEntropyLoss()
+  global t_logit
   y_true = []
   y = []
   y_conf = []
@@ -210,22 +216,229 @@ def test(model,test_loader,cudav):
   if cudav:
     torch.cuda.empty_cache()
 
-def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
-    if(os.path.exists(os.path.join(path,'tensorboard'))):
-        shutil.rmtree(os.path.join(path,'tensorboard'))
-    os.mkdir(os.path.join(path,'tensorboard'))
-    use_gpu = True
-    train_loader,val_loader = dl.create_loader('./data/split/train', batch_size=batch_size, shuffle=True, cudav = use_gpu, split = 0.1,sz = img_size)
-    test_loader = dl.create_loader('./data/split/test', batch_size=batch_size, shuffle=False,  cudav = use_gpu, sz = img_size)
-    _,data,target = next(iter(train_loader))
 
-    writer.add_embedding(data.view(batch_size,-1),metadata=target,label_img=data)
-    writer.add_graph(model.cpu(), data)
+def trainlog(message,epoch, correct, loss):
+    print(message + " epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss))
+
+
+
+
+def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
+    folder = 'tensorboard'
+    for filename in os.listdir(folder):
+      file_path = os.path.join(folder, filename)
+      try:
+          if os.path.isfile(file_path) or os.path.islink(file_path):
+              os.unlink(file_path)
+          elif os.path.isdir(file_path):
+              shutil.rmtree(file_path)
+      except Exception as e:
+          print('Failed to delete %s. Reason: %s' % (file_path, e))
+    # tensorboard
+    os.system("tensorboard --reload_interval 15 --logdir tensorboard")
+
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    train_path = os.path.join(root_dir, '..', 'data', 'split', 'train')
+    test_path = os.path.join(root_dir, '..', 'data', 'split', 'test')
+    train_loader = dl.create_loader(train_path, batch_size=batch_size, shuffle=True,  sz = img_size)
+    test_loader = dl.create_loader(test_path, batch_size=batch_size, shuffle=False, sz = img_size)
+    for _,data,target in train_loader:
+      writer.add_embedding(data.view(data.shape[0],-1),metadata=target,label_img=data)
+      writer.add_graph(model.cpu(), data)
+      break
+    if torch.cuda.is_available():
+      use_gpu = True
+      model.cuda()
     train(model,train_loader,val_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
     validation(model,val_loader,use_gpu)
-    test(model,test_loader,use_gpu)
     global completed
     completed = "true"
 
-def makemodel():
-    pass
+
+
+
+def makemodel(layers, embedding_size):
+
+  modules = []
+  for layer in layers:
+    if layer == "Conv":
+      modules.append(nn.Conv2d(128, 128, kernel_size=3, padding=1))
+    elif layer == "B_Norm":
+      modules.append(nn.BatchNorm2d(128))
+    elif layer == "Relu":
+      modules.append(nn.ReLU(inplace=True))
+    
+  print(modules)
+  class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        
+        self.grad = None
+        self.cam = False
+        # CNN layers
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3),
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(),
+            
+            nn.Conv2d(32, 32, kernel_size=3),
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(),
+            
+            nn.Conv2d(32, 32, kernel_size=5, stride=2, padding=14),
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(),
+            
+            nn.MaxPool2d(2, 2),
+            nn.Dropout2d(0.25)
+        )
+        
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(32, 128, kernel_size=3),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            
+            nn.Conv2d(128,128, kernel_size=3),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            
+            nn.Conv2d(128, 128, kernel_size=5, stride=2, padding=6),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Dropout2d(0.25),
+            
+        )
+        
+        self.conv25 = nn.Sequential(*modules)
+
+        self.conv3 = nn.Sequential(
+            nn.AvgPool2d(2, 2),
+            nn.Conv2d(128, 256, kernel_size=5, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Dropout2d(0.5)
+        )
+        
+        self.fc = nn.Sequential(
+            #nn.Linear(128 * 1 * 1, 128),
+        )
+
+
+        self.localization = nn.Sequential(
+            nn.Conv2d(3, 8, kernel_size=7),
+            nn.MaxPool2d(2, stride=2),
+            nn.ReLU(True),
+            nn.Conv2d(8, 10, kernel_size=5),
+            nn.MaxPool2d(2, stride=2),
+            nn.ReLU(True)
+            )
+
+        # Regressor for the 3 * 2 affine matrix
+        self.fc_loc = nn.Sequential(
+            nn.Linear(10 * 6 * 6, sz),
+            nn.ReLU(True),
+            nn.Linear(sz, 3 * 2),
+            )
+        
+        # Initialize the weights/bias with identity transformation
+        self.fc_loc[2].weight.data.zero_()
+        self.fc_loc[2].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
+
+    # For Grad
+    def activations_hook(self,grad):
+        self.grad = grad
+    def activations(self,x):
+        x = self.stn(x)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        return x
+
+    # Spatial transformer network forward function
+    def stn(self, x):
+        xs = self.localization(x)
+        xs = xs.view(-1, 10 * 6 * 6)
+        theta = self.fc_loc(xs)
+        theta = theta.view(-1, 2, 3)
+        grid = F.affine_grid(theta, x.size())
+        x = F.grid_sample(x, grid)
+        return x
+
+    def compute_features(self, x):
+        x = self.stn(x)
+        self.datain = x
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv25(x)
+
+        if self.cam:
+          h = x.register_hook(self.activations_hook)
+
+        x = self.conv3(x)
+        #print(x.shape)
+        x = x.view(-1, 256 * 3 * 3)
+        x = self.fc(x)
+        return x
+    
+    
+  class CNN_DUQ(Net):
+    def __init__(
+        self,
+        input_size,
+        num_classes,
+        centroid_size,
+        model_output_size,
+        length_scale,
+        gamma,
+        input_dep_ls=False
+    ):
+        super().__init__()
+
+        self.gamma = gamma
+        self.input_dep_ls=input_dep_ls
+        self.W = nn.Parameter(
+            torch.zeros(centroid_size, num_classes, model_output_size))
+        nn.init.kaiming_normal_(self.W, nonlinearity="relu")
+        self.register_buffer("N", torch.zeros(num_classes) + 13)
+        self.register_buffer(
+            "m", torch.normal(torch.zeros(centroid_size, num_classes), 0.05)
+        )
+        self.m = self.m * self.N
+        
+        if input_dep_ls:
+            self.sigmann = nn.Sequential(
+              nn.Linear(model_output_size, 100),
+              nn.ReLU(True),
+              nn.Dropout2d(0.35),
+              nn.Linear(100, 1))
+        self.sigma = length_scale*length_scale
+
+    def rbf(self, z):
+    
+        if self.input_dep_ls:
+            self.sigma = torch.sigmoid(self.sigmann(z)/50)+0.001
+
+        z = torch.einsum("ij,mnj->imn", z, self.W)
+
+        embeddings = self.m / self.N.unsqueeze(0)
+
+        diff = z - embeddings.unsqueeze(0)
+        diff = (- diff ** 2).mean(1).div(2 * (self.sigma)).exp()
+
+        return diff
+
+    def update_embeddings(self, x, y):
+        self.N = self.gamma * self.N + (1 - self.gamma) * y.sum(0)
+
+        z = self.compute_features(x)
+
+        z = torch.einsum("ij,mnj->imn", z, self.W)
+        embedding_sum = torch.einsum("ijk,ik->jk", z, y)
+
+        self.m = self.gamma * self.m + (1 - self.gamma) * embedding_sum
+
+    def forward(self, x):
+        z = self.compute_features(x)
+        y_pred = self.rbf(z)
+        return y_pred
+
+  return CNN_DUQ(32, 43, embedding_size, 256*3*3, 0.6, 0.999, True).float().cuda()
