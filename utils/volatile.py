@@ -562,3 +562,15 @@ def create_roc_dict():
     main_dict = {}
     main_dict["roc_curve"] = roc_list
     return main_dict
+
+def get_graphs():
+    graph_dict = {}
+    uc_hist = create_uncertainty_hist_dict()
+    uc_bar = create_uncertainty_bar_dict()
+    f1_bar = create_f1_bar_dict()
+    roc_line = create_roc_dict()
+    graph_dict["UC_Hist"] = uc_hist
+    graph_dict["UC_Bar"] = uc_bar
+    graph_dict["F1"] = f1_bar
+    graph_dict["ROC"] = roc_line
+    return graph_dict
