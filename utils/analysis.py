@@ -4,12 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
+import os
 
-from sklearn.metrics import confusion_matrix, f1_score, roc_curve, precision_score
+from sklearn.metrics import confusion_matrix, f1_score, roc_curve, precision_score, accuracy_score
 from sklearn.preprocessing import label_binarize
 from torchvision import transforms
 from torchvision.utils import save_image
 import torch.nn.functional as F
+import torch.nn as nn
+import utils.training as tr
 
 sz = 40
 test_transform = transforms.Compose([
@@ -67,14 +70,14 @@ def uncertainty_bar(n_classes, df):
 # per image score
 def uncertainty_scores(path, usecuda = True):
   with torch.no_grad():
-    model.eval()
+    tr.model.eval()
     img = Image.open(path)
     img = test_transform(img)
     if (usecuda):
       img = img.cuda()
     img = img.unsqueeze(0)
-    output = model(img).squeeze().cpu()
-    epistemic, aleatoric = output.max(0)[0].mean().item(), abs(model.sigma.squeeze().item())
+    output = tr.model(img).squeeze().cpu()
+    epistemic, aleatoric = output.max(0)[0].mean().item(), abs(tr.model.sigma.squeeze().item())
     return epistemic, aleatoric
 
 
@@ -98,12 +101,18 @@ def conf_matrix(df):
   cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
   cm = np.log(.0001 + cm)
 
+  root_dir = os.path.dirname(os.path.realpath(__file__))
+  loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
   plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
   plt.title('Log of normalized Confusion Matrix')
   plt.ylabel('True label')
   plt.xlabel('Predicted label')
-  plt.savefig("confusion.png")
-  return 'confusion.png'
+  plt.ioff()
+  img_name = os.path.join(loc_path, "confusion.svg")
+  if os.path.exists(img_name):
+      os.remove(img_name)
+  plt.savefig(img_name)
+  return img_name
 
 
 def f1_per_class(df):
@@ -113,7 +122,7 @@ def f1_per_class(df):
 
 def precision_per_class(df):
   data = df.to_numpy()
-  return precision_score(data[:,0],data[:,1],average=None)
+  return [data[:, 0], precision_score(data[:,0],data[:,1],average=None)]
 
 def acc_total(df):
   data = df.to_numpy()
@@ -136,34 +145,42 @@ def roc(df1, logit):
 
 def stn_view(path, usecuda = True):
     with torch.no_grad():
-      model.eval()
+      tr.model.eval()
       img = Image.open(path)
       img = test_transform(img)
       if (usecuda):
         img = img.cuda()
       img = img.unsqueeze(0)
-      output = model.stn(img).squeeze().cpu()
-      save_image(output,'stn.png')
-      return 'stn.png'
+      output = tr.model.stn(img).squeeze().cpu()
+      root_dir = os.path.dirname(os.path.realpath(__file__))
+      loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
+      img_name = os.path.join(loc_path, "stn.png")
+      if os.path.exists(img_name):
+        os.remove(img_name)
+      save_image(output,img_name)
+      return img_name
 
 
 def gradcam(path, usecuda = True):
   model.cam = True
   st = 0.7
-  model.eval()
+  tr.model.eval()
   img = Image.open(path)
   img = test_transform(img).unsqueeze(0)
   if usecuda:
     img = img.cuda()
-  out = model(img)
+  out = tr.model(img)
   pred = out.argmax(1).squeeze()
 
   out[:,pred].backward()
-  gradients = model.grad
+  gradients = tr.model.grad
   pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
-  activations = model.activations(img).detach()
+  activations = tr.model.activations(img).detach()
   for i in range(activations.shape[1]):
     activations[:, i, :, :] *= pooled_gradients[i]
+
+  root_dir = os.path.dirname(os.path.realpath(__file__))
+  loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
 
   with torch.no_grad():
       heatmap = torch.mean(activations, dim=1).cpu().unsqueeze(1)
@@ -174,28 +191,34 @@ def gradcam(path, usecuda = True):
       superimpose = (img + st*map)
       superimpose /= superimpose.max()
       superimpose = superimpose.permute(2,0,1)
-      save_image(superimpose,'gradcam.png')
+      img_name = os.path.join(loc_path, "gradcam.png")
+      if os.path.exists(img_name):
+        os.remove(img_name)
+      save_image(superimpose,img_name)
   model.cam = False
-  return 'gradcam.png'
+  return img_name
 
 
 def gradcam_noise(path, usecuda = True):
   model.cam = True
   st = 0.7
-  model.eval()
+  tr.model.eval()
   img = Image.open(path)
   img = test_transform(img).unsqueeze(0)
   if usecuda:
     img = img.cuda()
-  out = model(img)
+  out = tr.model(img)
   pred = out.argmax(1).squeeze()
 
-  model.sigma.backward()
-  gradients = model.grad
+  tr.model.sigma.backward()
+  gradients = tr.model.grad
   pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
-  activations = model.activations(img).detach()
+  activations = tr.model.activations(img).detach()
   for i in range(activations.shape[1]):
     activations[:, i, :, :] *= pooled_gradients[i]
+
+  root_dir = os.path.dirname(os.path.realpath(__file__))
+  loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
 
   with torch.no_grad():
       heatmap = torch.mean(activations, dim=1).cpu().unsqueeze(1)
@@ -206,16 +229,19 @@ def gradcam_noise(path, usecuda = True):
       superimpose = (img + st*map)
       superimpose /= superimpose.max()
       superimpose = superimpose.permute(2,0,1)
-      save_image(superimpose,'gradcam_n.png')
+      img_name = os.path.join(loc_path, "gradcam_n.png")
+      if os.path.exists(img_name):
+        os.remove(img_name)
+      save_image(superimpose,img_name)
   model.cam = False
-  return 'gradcam_n.png'
+  return img_name
 
 
 def violinplot():
   i=0
   w = [];b = []
-  model.eval()
-  for m in model.modules():
+  tr.model.eval()
+  for m in tr.model.modules():
       if isinstance(m, nn.Conv2d):
           w.append(m.weight.data.reshape(-1).cpu().detach().numpy()[0:864])
           b.append(m.bias.data.reshape(-1).cpu().detach().numpy()[0:32])
@@ -252,5 +278,10 @@ def violinplot():
   violinplots(w,'Violin plot of Conv Weights')
   plt.subplot(2,1,2)
   violinplots(b,'Violin plot of Conv Biases')
-  plt.savefig('violinplot.png')
-  return 'violinplot.png'
+  root_dir = os.path.dirname(os.path.realpath(__file__))
+  loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
+  img_name = os.path.join(loc_path, "violinplot.svg")
+  if os.path.exists(img_name):
+    os.remove(img_name)
+  plt.savefig(img_name)
+  return img_name

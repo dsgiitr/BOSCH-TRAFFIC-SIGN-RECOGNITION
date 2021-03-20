@@ -218,7 +218,7 @@ def test(model,test_loader,cudav):
 
 
 def trainlog(message,epoch, correct, loss):
-    print(message + " epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss));
+    print(message + " epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss))
 
 
 
@@ -237,13 +237,17 @@ def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_siz
     # tensorboard
     os.system("tensorboard --reload_interval 15 --logdir tensorboard")
 
-    train_loader = create_loader('split/train', batch_size=batch_size, shuffle=True,  sz = img_size)
-    val_loader = create_loader('split/val', batch_size=batch_size, shuffle=False, sz = img_size)
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    train_path = os.path.join(root_dir, '..', 'data', 'split', 'train')
+    test_path = os.path.join(root_dir, '..', 'data', 'split', 'test')
+    train_loader = dl.create_loader(train_path, batch_size=batch_size, shuffle=True,  sz = img_size)
+    test_loader = dl.create_loader(test_path, batch_size=batch_size, shuffle=False, sz = img_size)
     for _,data,target in train_loader:
       writer.add_embedding(data.view(data.shape[0],-1),metadata=target,label_img=data)
       writer.add_graph(model.cpu(), data)
       break
-    if use_gpu:
+    if torch.cuda.is_available():
+      use_gpu = True
       model.cuda()
     train(model,train_loader,val_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
     validation(model,val_loader,use_gpu)

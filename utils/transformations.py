@@ -28,17 +28,13 @@ def Hist_Eq(img):
         JA  - 2011 2nd International Symposium on Intelligence Information Processing and Trusted Computing
         Y1  - 22-23 Oct. 2011
     """
-    img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    heqv = cv2.equalizeHist(img_grey)
-    img_new = cv2.cvtColor(heqv, cv2.COLOR_GRAY2BGR)
+    ycrcb_img = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+    ycrcb_img[:, :, 0] = cv2.equalizeHist(ycrcb_img[:, :, 0])
+    img_new = cv2.cvtColor(ycrcb_img, cv2.COLOR_YCrCb2BGR)
     return img_new
 
-
-
-
-
 def CLAHE(img, clip_limit=2.0, tile_grid_size=(8,8)):
-     """
+    """
     Applies Contrast Limited Adaptive Histogram Equalization to the input image
     
     Args:
@@ -67,10 +63,10 @@ def CLAHE(img, clip_limit=2.0, tile_grid_size=(8,8)):
           pages={2392-2397},
           doi={10.1109/ICACCI.2014.6968381}}
     """
-    img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ycrcb_img = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
     clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
-    clh = clahe.apply(img_grey)
-    img_new = cv2.cvtColor(clh, cv2.COLOR_GRAY2BGR)
+    ycrcb_img[:, :, 0] = clahe.apply(ycrcb_img[:, :, 0])
+    img_new = cv2.cvtColor(ycrcb_img, cv2.COLOR_YCrCb2BGR)
     return img_new
 
 def Grey(img):
