@@ -33,6 +33,9 @@ def Hist_Eq(img):
     img_new = cv2.cvtColor(ycrcb_img, cv2.COLOR_YCrCb2BGR)
     return img_new
 
+
+
+
 def CLAHE(img, clip_limit=2.0, tile_grid_size=(8,8)):
     """
     Applies Contrast Limited Adaptive Histogram Equalization to the input image
@@ -69,24 +72,120 @@ def CLAHE(img, clip_limit=2.0, tile_grid_size=(8,8)):
     img_new = cv2.cvtColor(ycrcb_img, cv2.COLOR_YCrCb2BGR)
     return img_new
 
+
+
+
+
 def Grey(img):
+    """
+    Applies grey scale to the input image
+    
+    Args:
+        img: Input image to be augmented
+    Output:
+        timg: grey scale Image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_grey_new = cv2.cvtColor(img_grey, cv2.COLOR_GRAY2BGR)
     return img_grey_new
 
+
+
+
 def RGB(img):
+    """
+    Applies RGB scale to the input image
+    
+    Args:
+        img: Input image to be augmented
+    Output:
+        timg: RGB scale Image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img_rgb
 
+
+
+
 def HSV(img):
+    """
+    Applies HSV scale to the input image
+    
+    Args:
+        img: Input image to be augmented
+    Output:
+        timg: HSV scale Image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     return img_hsv
 
+
+
 def LAB(img):
+    """
+    Applies LAB scale to the input image
+    
+    Args:
+        img: Input image to be augmented
+    Output:
+        timg: LAB scale Image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     return img_lab
 
+
+
+
 def Discrete_Wavelet(img, mode='haar', level=4):
+    """
+    Applies Discreet Wavelet Filter to the input image
+    
+    Args:
+        img: Input image to be augmented
+        mode(str):('haar', 'coif10', 'db10', 'sym10')
+            Mode for Discreet Wavelet Transformation
+            default: 'haar'
+            
+        level(int):
+            Number of levels to applt wavelet transformation
+            default: 4
+    Output:
+        timg: Filtered Image
+    
+    Source:
+        https://docs.opencv.org/master/
+        https://pywavelets.readthedocs.io/en/latest/
+    Reference:
+        TY  - JOUR
+        A2  - Deflorian, Flavio
+        AU  - Ramos, Rogelio
+        AU  - Valdez-Salas, Benjamin
+        AU  - Zlatev, Roumen
+        AU  - Schorr Wiener, Michael
+        AU  - Bastidas Rull, Jose María
+        PY  - 2017
+        DA  - 2017/06/04
+        TI  - The Discrete Wavelet Transform and Its Application for Noise Removal in Localized Corrosion Measurements
+        SP  - 7925404
+        VL  - 2017
+        SN  - 1687-9325
+        UR  - https://doi.org/10.1155/2017/7925404
+        DO  - 10.1155/2017/7925404
+        JF  - International Journal of Corrosion
+        PB  - Hindawi
+    """
     img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_arr = np.float32(img_grey)
     img_arr /= 255
@@ -98,7 +197,21 @@ def Discrete_Wavelet(img, mode='haar', level=4):
     img_new = cv2.cvtColor(img_arr_new, cv2.COLOR_GRAY2BGR)
     return img_new
 
+
+
+
 def add_brightness(img):
+    """
+    Applies brightness to the input image
+    
+    Args:
+        img: Input image to be transformed
+    Output:
+        timg: Brightness Enchanced Image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     img_HLS = cv2.cvtColor(img,cv2.COLOR_RGB2HLS) ## Conversion to HLS
     img_HLS = np.array(img_HLS, dtype = np.float64)
     random_brightness_coefficient = np.random.uniform()+0.5 ## generates value between 0.5 and 1.5
@@ -108,7 +221,26 @@ def add_brightness(img):
     img_RGB = cv2.cvtColor(img_HLS,cv2.COLOR_HLS2RGB) ## Conversion to RGB
     return img_RGB
 
+
+
+
 def _generate_shadow_coordinates(imshape, no_of_shadows=1):
+    """
+    Generates coordinates for shadows for input shape
+    
+    Args:
+        imshape(tuple):
+            (N(int),N(int))
+            Input image to be transformed
+        no_of_shadows(int):
+            Number of shadow points to generate
+            default: 1
+    Output:
+        vertices_list: List of Vertices to generate shadows
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     vertices_list=[]
     for index in range(no_of_shadows):
         vertex=[]
@@ -118,7 +250,23 @@ def _generate_shadow_coordinates(imshape, no_of_shadows=1):
         vertices_list.append(vertices)
     return vertices_list ## List of shadow vertices
 
+
+
 def add_shadow(img,no_of_shadows=3):
+    """
+    Add shadows to input image
+    
+    Args:
+        img: input image
+        no_of_shadows(int):
+            Number of shadow points to generate
+            default: 3
+    Output:
+        img_RGB: returns shadowed image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     img_HLS = cv2.cvtColor(img,cv2.COLOR_RGB2HLS) ## Conversion to HLS
     mask = np.zeros_like(img)
     imshape = img.shape
@@ -129,7 +277,20 @@ def add_shadow(img,no_of_shadows=3):
     img_RGB = cv2.cvtColor(img_HLS,cv2.COLOR_HLS2RGB) ## Conversion to RGB
     return img_RGB
 
+
+
 def add_snow(img):
+    """
+    Add snow effect to input image
+    
+    Args:
+        img: input image
+    Output:
+        img_RGB: snowed effect image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     img_HLS = cv2.cvtColor(img,cv2.COLOR_RGB2HLS) ## Conversion to HLS
     img_HLS = np.array(img_HLS, dtype = np.float64)
     brightness_coefficient = 2.5
@@ -140,7 +301,27 @@ def add_snow(img):
     img_RGB = cv2.cvtColor(img_HLS,cv2.COLOR_HLS2RGB) ## Conversion to RGB
     return img_RGB
 
+
+
+
 def _generate_random_lines(imshape,slant,drop_length):
+    """
+    generate random lines for rain effect
+    
+    Args:
+        imshape(tuple):
+            (N(int),N(int))
+            Input image to be transformed
+        slant(float):
+            Angle of rain effect
+        drop_length(float):
+            Length of each drop
+    Output:
+        drops: List of position of drops
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     drops=[]
     for i in range(1500): ## If You want heavy rain, try increasing this
         if slant<0:
@@ -151,7 +332,21 @@ def _generate_random_lines(imshape,slant,drop_length):
         drops.append((x,y))
     return drops
 
+
+
+
 def add_rain(img):
+    """
+    Add rain effect to input image
+    
+    Args:
+        img: input image
+    Output:
+        img_RGB: rained effect image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     imshape = img.shape
     slant_extreme=10
     slant= np.random.randint(-slant_extreme,slant_extreme)
@@ -169,12 +364,41 @@ def add_rain(img):
     return img_RGB
 
 def _add_blur(img, x,y,hw):
+    """
+    Add blur effect to input image
+    
+    Args:
+        img: input image
+        x(int): x coordinate 
+        y(int): y cooridinate
+        hw(int): height width
+        
+    Output:
+        img_RGB:  Blured image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     img[y:y+hw, x:x+hw,1] = img[y:y+hw, x:x+hw,1]+1
     img[:,:,1][img[:,:,1]>255]  = 255 ##Sets all values above 255 to 255
     img[y:y+hw, x:x+hw,1] = cv2.blur(img[y:y+hw, x:x+hw,1] ,(10,10))
     return img
 
 def _generate_random_blur_coordinates(imshape,hw):
+    """
+    Generate Random coordinates to blur the image
+    
+    Args:
+        imshape(tuple):
+            (N(int),N(int))
+            Input image to be transformed
+        hw(int): height width      
+    Output:
+        blur_points: List of  blur points
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     blur_points=[]
     midx= imshape[1]//2-hw-100
     midy= imshape[0]//2-hw-100
@@ -191,6 +415,18 @@ def _generate_random_blur_coordinates(imshape,hw):
 
 #Slow implementation, TODO: write faster functional alternative
 def add_fog(img):
+    """
+    Add fog effect to input image
+    
+    Args:
+        img: input image
+        
+    Output:
+        img_RGB:  Fog affected image
+    
+    Source:
+        https://docs.opencv.org/master/
+    """
     img_HLS = cv2.cvtColor(img,cv2.COLOR_RGB2HLS) ## Conversion to HLS
     mask = np.zeros_like(img)
     imshape = img.shape
