@@ -101,8 +101,7 @@ def conf_matrix(df):
   cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
   cm = np.log(.0001 + cm)
 
-  root_dir = os.path.dirname(os.path.realpath(__file__))
-  loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
+  loc_path = os.path.join('data', 'analysis')
   plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
   plt.title('Log of normalized Confusion Matrix')
   plt.ylabel('True label')
@@ -152,8 +151,7 @@ def stn_view(path, usecuda = True):
         img = img.cuda()
       img = img.unsqueeze(0)
       output = tr.model.stn(img).squeeze().cpu()
-      root_dir = os.path.dirname(os.path.realpath(__file__))
-      loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
+      loc_path = os.path.join('data', 'analysis')
       img_name = os.path.join(loc_path, "stn.png")
       if os.path.exists(img_name):
         os.remove(img_name)
@@ -179,8 +177,7 @@ def gradcam(path, usecuda = True):
   for i in range(activations.shape[1]):
     activations[:, i, :, :] *= pooled_gradients[i]
 
-  root_dir = os.path.dirname(os.path.realpath(__file__))
-  loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
+  loc_path = os.path.join('data', 'analysis')
 
   with torch.no_grad():
       heatmap = torch.mean(activations, dim=1).cpu().unsqueeze(1)
@@ -217,8 +214,7 @@ def gradcam_noise(path, usecuda = True):
   for i in range(activations.shape[1]):
     activations[:, i, :, :] *= pooled_gradients[i]
 
-  root_dir = os.path.dirname(os.path.realpath(__file__))
-  loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
+  loc_path = os.path.join('data', 'analysis')
 
   with torch.no_grad():
       heatmap = torch.mean(activations, dim=1).cpu().unsqueeze(1)
@@ -278,8 +274,7 @@ def violinplot():
   violinplots(w,'Violin plot of Conv Weights')
   plt.subplot(2,1,2)
   violinplots(b,'Violin plot of Conv Biases')
-  root_dir = os.path.dirname(os.path.realpath(__file__))
-  loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
+  loc_path = os.path.join('data', 'analysis')
   img_name = os.path.join(loc_path, "violinplot.png")
   if os.path.exists(img_name):
     os.remove(img_name)
