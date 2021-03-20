@@ -564,8 +564,7 @@ def create_precision_bar_dict():
 def get_cm():
     #df = train.test_df
     #img_path = al.conf_matrix(df)
-    root_dir = os.path.dirname(os.path.realpath(__file__))
-    loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
+    loc_path = os.path.join('data', 'analysis')
     img_name = os.path.join(loc_path, "confusion.png")
     return img_name
 
@@ -586,6 +585,29 @@ def create_roc_dict():
     main_dict = {}
     main_dict["roc_curve"] = roc_list
     return main_dict
+
+def get_stn(path):
+    #path = al.stn_view(path)
+    path = os.path.join('data','analysis','stn.png')
+    return path
+
+def get_gradcam(path):
+    #path = al.gradcam(path)
+    path = os.path.join('data','analysis','gradcam.png')
+    return path
+
+def get_gradcam_noise(path):
+    #path = al.gradcam_noise(path)
+    path = os.path.join('data','analysis','gradcam_n.png')
+    return path
+
+def get_uc_scores(path):
+    #epistemic, aleatoric = al.uncertainty_scores(path)
+    epistemic, aleatoric = 0.92, 0.93
+    uc_dict = {}
+    uc_dict["epistemic"] = epistemic
+    uc_dict["aleatoric"] = aleatoric
+    return uc_dict
 
 def get_graphs_1():
     graph_dict = {}
@@ -610,3 +632,61 @@ def get_graphs_3():
     graph_dict["UC_Hist"] = uc_hist
     graph_dict["UC_Bar"] = uc_bar
     return graph_dict
+
+def apply_augs(path, angle, kdim, amount, mean, variance):
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    ext = path.split(".")[1]
+    img_name = "original." + ext 
+    mod_img_name = "modified." + ext
+    final_path = os.path.join(root_dir, '..', 'data', 'analysis', img_name)
+    final_mod_path = os.path.join(root_dir, '..', 'data', 'analysis', mod_img_name)
+    if os.path.exists(final_path):
+        os.remove(final_path)
+    if os.path.exists(final_mod_path):
+        os.remove(final_mod_path)
+    shutil.copy2(path, final_path)
+    img = cv2.imread(final_path)
+    img_rotate = ag.rotate(img, angle=angle)
+    img_blur = ag.blur(img_rotate, kdim=kdim)
+    img_sharpen = ag.sharpen(img_blur, amount=amount)
+    img_noise = ag.noise(img_sharpen, var=variance, mean=mean)
+    cv2.imwrite(final_mod_path, img_noise)
+    req_org_path = os.path.join('data', 'analysis', img_name)
+    req_mod_path = os.path.join('data', 'analysis', mod_img_name)
+    return req_org_path, req_mod_path
+
+def get_analysis_info(data):
+    req_dict = json.loads(data)
+    img_path = req_dict["img_path"]
+    angle = req_dict["rotate"]["angle"]
+    k_dim = req_dict["blur"]["k_dim"]
+    amount = req_dict["sharpen"]["amount"]
+    mean = req_dict["noise"]["mean"]
+    variance = req_dict["noise"]["variance"]
+    final_dict = {}
+    org_path, mod_path = apply_augs(img_path, angle, k_dim, amount, mean, variance)
+    stn_path = get_stn(mod_path)
+    gradcam_path = get_gradcam(mod_path)
+    gradcam_noise_path = get_gradcam_noise(mod_path)
+    uc_scores = get_uc_scores(mod_path)
+    final_dict["original"] = org_path
+    final_dict["modified"] = mod_path
+    final_dict["stn"] = stn_path
+    final_dict["gradcam"] = gradcam_path
+    final_dict["gradcam_noise"] = gradcam_noise_path
+    final_dict["uc_scores"] = uc_scores
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    json_path = os.path.join(root_dir, '..', 'data', 'analysis', 'analysis.json')
+    if os.path.exists(json_path):
+        os.remove(json_path)
+    with open(json_path, 'w') as json_file:
+        json.dump(final_dict, json_file)
+
+def get_graphs_4():
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    json_path = os.path.join(root_dir, '..', 'data', 'analysis', 'analysis.json')
+    return json_path
+
+
+
+
