@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from flask import current_app
 
 def rotate(img, angle=0):
     rows, cols, _ = img.shape
@@ -64,14 +65,14 @@ def crop(img, input_pts=np.float32([[0, 0], [32, 0], [0, 32], [32, 32]])):
     timg = cv2.warpPerspective(img, M, (32, 32))
     return timg
 
-def random_erasing(img, region=np.array([[12, 12], [20, 12], [12, 20], [20, 20]]), randomize=True, grayIndex=0, mean=0, var=10):
+def random_erasing(img,  randomize, grayIndex, mean, var, region=np.array([[12, 12], [20, 12], [12, 20], [20, 20]])):
     row, col, _ = img.shape
     sigma = var ** 0.5
     timg = img
-    a = region[0, 0]
-    b = region[1, 0]
-    c = region[0, 1]
-    d = region[2, 1]
+    a = int(region[0, 0])
+    b = int(region[1, 0])
+    c = int(region[0, 1])
+    d = int(region[2, 1])
     if randomize:
         gaussian = np.random.normal(mean, sigma, (b-a, d-c))
         timg[a:b, c:d, 0] = gaussian

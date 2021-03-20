@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -6,6 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 import os, shutil
 import pandas as pd
 import numpy as np
+import utils.dataset_loader as dl
 
 valid_df = []
 test_df = []
@@ -19,6 +21,29 @@ writer = SummaryWriter('tensorboard')
 train_loader = []
 val_loader = []
 test_loader = []
+completed = "false"
+
+def trainlog(epoch, correct, loss):
+  print("epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss))
+
+def calc_gradient_penalty(x, y_pred_sum):
+    gradients = torch.autograd.grad(
+        outputs=y_pred_sum,
+        inputs=x,
+        grad_outputs=torch.ones_like(y_pred_sum),
+        create_graph=True,
+        retain_graph=True,
+    )[0]
+
+    gradients = gradients.flatten(start_dim=1)
+
+    # L2 norm
+    grad_norm = gradients.norm(2, dim=1)
+
+    # Two sided penalty
+    gradient_penalty = ((grad_norm - 1) ** 2).mean()
+
+    return gradient_penalty
 
 # model should have model.datain, model.update_embeddings
 def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
@@ -42,7 +67,8 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
       data, target = Variable(data), Variable(target).long()
       if cudav :
         torch.cuda.empty_cache()
-        data=data.cuda(); target=target.cuda();
+        data=data.cuda()
+        target=target.cuda()
       model.train()
 
       optimizer.zero_grad()
@@ -81,8 +107,6 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
     scheduler.step()
   if cudav:
     torch.cuda.empty_cache()
-
-
 
 
 def validation(model,val_loader,cudav):
@@ -140,8 +164,6 @@ def validation(model,val_loader,cudav):
   return 100.*correct_/len(val_loader.dataset),np.array(val_loss_).mean()
 
 
-
-
 def test(model,test_loader,cudav):
   model.eval()
   criterion = nn.CrossEntropyLoss()
@@ -193,6 +215,7 @@ def test(model,test_loader,cudav):
   if cudav:
     torch.cuda.empty_cache()
 
+
 def trainlog(message,epoch, correct, loss):
     print(message + " epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss));
 
@@ -223,6 +246,11 @@ def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_siz
       model.cuda()
     train(model,train_loader,val_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
     validation(model,val_loader,use_gpu)
+    global completed
+    completed = "true"
+
+
+
 
 def makemodel():
-    ;
+    pass

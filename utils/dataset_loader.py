@@ -1,3 +1,4 @@
+import torch
 from torchvision import datasets, transforms
 import torch.utils.data as data
 from torchvision.datasets.folder import default_loader, make_dataset

@@ -5,8 +5,11 @@ import shutil
 import numpy as np
 import pandas as pd
 import json
+import utils.dataset_loader as dlr
 import utils.augmentations as ag
 import utils.transformations as tr
+import utils.training as train
+import utils.analysis as al
 from datetime import datetime
 from flask import current_app
 
@@ -171,25 +174,30 @@ def create_train_test_json():
     loc_path = os.path.dirname(os.path.realpath(__file__))
     train_dir = os.path.join(loc_path, '..', 'data', 'split', 'train')
     test_dir = os.path.join(loc_path, '..', 'data', 'split', 'test')
+    train_json = os.path.join(train_dir, 'train.json')
+    test_json = os.path.join(test_dir, 'test.json')
+    if os.path.exists(train_json):
+        os.remove(train_json)
+    if os.path.exists(test_json):
+        os.remove(test_json)
     create_json_file(train_dir, 'train.json', False, False)
     create_json_file(test_dir, 'test.json', False, False)
-    train_json = os.path.join(train_dir, 'train.json')
     with open(train_json) as f:
         train_dict = json.load(f)
-    test_json = os.path.join(test_dir, 'test.json')
     with open(test_json) as f:
         test_dict = json.load(f)
     main_dict["train"] = train_dict
     main_dict["test"] = test_dict
     out_path = os.path.join(loc_path, '..', 'data', 'split', 'train_test.json')
+    if os.path.exists(out_path):
+        os.remove(out_path)
     with open(out_path, 'w') as json_file:
         json.dump(main_dict, json_file)
     return out_path
 
 def select_random_batch(root_dir, file_dir, select_fraction, folder):
     mod_dir = os.path.join(root_dir, '..', 'data', 'batch')
-    if not os.path.exists(mod_dir): 
-        os.mkdir(mod_dir)
+    create_dir(mod_dir)
     final_dir = os.path.join(mod_dir, folder)
     create_dir(final_dir)
     for _, classes, _ in os.walk(file_dir):
@@ -281,7 +289,10 @@ def create_image_folders():
                         for img_name in images:
                             img_path = os.path.join(class_dir, img_name)
                             img_list.append((img_name, img_path))
-    num_select = 16
+    if len(img_list) > 16:
+        num_select = 16 
+    else:
+        num_select = len(img_list)
     select_images = random.sample(img_list, num_select)
     for img in select_images:
         org_loc = img[1]
@@ -340,7 +351,7 @@ def apply_augmentation(img, aug, params):
     elif aug=="noise": img_new = ag.gaussian_noise(img, var=params["variance"], mean=params["mean"])
     elif aug=="perspective_transform": img_new = ag.perspective_transform(img, input_pts=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
     elif aug=="crop": img_new = ag.crop(img, input_pts=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
-    elif aug=="erase": img_new = ag.random_erasing(img, region=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
+    elif aug=="erase": img_new = ag.random_erasing(img, randomize=bool(params["randomize"]),grayIndex=params["grayIndex"],mean=params["mean"],var=params["variance"],region=np.float32([params["pt1"], params["pt2"], params["pt3"], params["pt4"]]))
     elif aug=="Hist_Eq": img_new = tr.Hist_Eq(img)
     elif aug=="CLAHE": img_new = tr.CLAHE(img)
     elif aug=="Grey": img_new = tr.Grey(img)
@@ -375,7 +386,7 @@ def apply_16(data):
     aug_type = aug_dict["name"]
     aug_params = aug_dict["params"]
     add_aug_list((aug_type, aug_params))
-    #current_app.logger.info(Aug_List)
+    # current_app.logger.info(Aug_List)
     root_dir = os.path.dirname(os.path.realpath(__file__))
     main_path = os.path.join(root_dir, '..', 'data', 'modified_16')
     back_path = os.path.join(root_dir, '..', 'data', 'backup_16')
@@ -406,6 +417,7 @@ def apply_batch():
     main_path = os.path.join(root_dir, '..', 'data', 'batch')
     final_path = os.path.join(root_dir, '..', 'data', 'split')
     for (aug_type, aug_params) in Aug_List:
+        current_app.logger.info(aug_type)
         for _, types, _ in os.walk(main_path):
             for type in types:
                 type_path = os.path.join(main_path, type)
@@ -451,3 +463,114 @@ def del_aug_list():
 def reset_aug_list():
     global Aug_List
     Aug_List = []
+
+def get_layers(layers):
+    layers_list = []
+    for layer in layers:
+        layer_type = layer["name"]
+        layers_list.append(layer_type)
+    return layers_list
+
+def start_training(data):
+    main_dict = json.loads(data)
+    optimizer = main_dict["optimizer"]
+    epochs = main_dict["epochs"]
+    batch_size = main_dict["batchSize"]
+    lr = main_dict["learningRate"]
+    centroid_size = main_dict["centroidSize"]
+    lm = main_dict["lm"]
+    weight_decay = main_dict["weightDecay"]
+    layers = get_layers(main_dict["layers"])
+    train.makemodel(layers)
+    train.runtraining(epochs, batch_size, lr, centroid_size, lm, weight_decay, optimizer)
+
+def get_tensorboard():
+    link_dict = {}
+    link_dict["link"] = train.url
+    return link_dict
+
+def check_exit_signal():
+    end_dict = {}
+    end_dict["completed"] = train.completed
+    return end_dict
+
+def create_uncertainty_hist_dict():
+    #df = train.test_df
+    #[h_1, l_1, h_2, l_2] = al.uncertainty_hist(df)
+    h_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_1 = [1,3,5,7,9,11,13,15]
+    h_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_2 = [2,4,6,8,10,12,14,16]
+    correct_dict = {}
+    correct_dict["labels"] = l_1
+    correct_dict["data"] = h_1
+    wrong_dict = {}
+    wrong_dict["labels"] = l_2
+    wrong_dict["data"] = h_2
+    main_dict = {}
+    main_dict["correct"] = correct_dict
+    main_dict["wrong"] = wrong_dict
+    return main_dict
+
+def create_uncertainty_bar_dict():
+    #root_dir = os.path.dirname(os.path.realpath(__file__))
+    #loc_path = os.path.join(root_dir, '..', 'data', 'modified')
+    #n_classes = len(dlr.find_classes(loc_path)[0])
+    #df = train.test_df
+    #[b_1, l_1, b_2, l_2] = al.uncertainty_bar(n_classes, df)
+    b_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_1 = [1,2,3,4,5,6,7,8]
+    b_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_2 = [1,2,3,4,5,6,7,8]
+    epistemic_dict = {}
+    epistemic_dict["labels"] = l_1
+    epistemic_dict["data"] = b_1
+    aleatoric_dict = {}
+    aleatoric_dict["labels"] = l_2
+    aleatoric_dict["data"] = b_2
+    main_dict = {}
+    main_dict["epistemic"] = epistemic_dict
+    main_dict["aleatoric"] = aleatoric_dict
+    return main_dict
+
+def create_f1_bar_dict():
+    #df = train.test_df
+    #[l, b] = al.f1_per_class(df)
+    #s = al.f1_total(df)
+    b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l = [1,2,3,4,5,6,7,8]
+    s = 0.99
+    f1_class_dict = {}
+    f1_class_dict["labels"] = l
+    f1_class_dict["data"] = b
+    main_dict = {}
+    main_dict["f1_class"] = f1_class_dict
+    main_dict["score"] = s
+    return main_dict
+
+def create_roc_dict():
+    #df = train.test_df
+    #logit = train.t_logit
+    #fpr, tpr = al.roc(df, logit)
+    fpr, tpr = [ [0.1,0.2,0.3],[0.1,0.2,0.3] ], [ [0.1,0.2,0.3],[0.2,0.4,0.6] ]
+    roc_list = []
+    for i in range(len(fpr)):
+        roc_dict = {}
+        roc_dict["x"] = fpr[i]
+        roc_dict["y"] = tpr[i]
+        roc_list.append(roc_dict)
+    main_dict = {}
+    main_dict["roc_curve"] = roc_list
+    return main_dict
+
+def get_graphs():
+    graph_dict = {}
+    uc_hist = create_uncertainty_hist_dict()
+    uc_bar = create_uncertainty_bar_dict()
+    f1_bar = create_f1_bar_dict()
+    roc_line = create_roc_dict()
+    graph_dict["UC_Hist"] = uc_hist
+    graph_dict["UC_Bar"] = uc_bar
+    graph_dict["F1"] = f1_bar
+    graph_dict["ROC"] = roc_line
+    return graph_dict
