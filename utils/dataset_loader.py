@@ -3,6 +3,8 @@ import torch.utils.data as data
 from torchvision.datasets.folder import default_loader, make_dataset
 import os
 
+n_classes = 43
+
 def find_classes(dir):
     classes = os.listdir(dir)
     classes.sort()
@@ -55,13 +57,3 @@ def create_loader(path,batch_size=64,shuffle=True,cudav=False,transform=None,sz=
         return train_loader, val_loader
     loader = torch.utils.data.DataLoader(ds,batch_size=batch_size, shuffle=shuffle)
     return loader
-
-
-
-#train_loader = create_loader('./train_images', batch_size=64, shuffle=True, cudav = use_gpu, transform = [data_transforms])
-#val_loader = create_loader('./val_images', batch_size=64, shuffle=False,  cudav = use_gpu, transform =[data_transforms])
-#test_loader = create_loader('./test_images', batch_size=64, shuffle=False,  cudav = use_gpu, transform = [data_transforms])
-#validation(model,val_loader,True)
-#test(model,test_loader,True)
-# test_df
-# valid_df
