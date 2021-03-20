@@ -147,27 +147,9 @@ def check_exit(timestamp):
 
 
 @cross_origin()
-@app.route("/GetUcHist/<timestamp>", methods=["GET"])
-def get_uc_hist(timestamp):
-    json_dict = util.create_uncertainty_hist_dict()
-    return jsonify(json_dict)
-
-@cross_origin()
-@app.route("/GetUcbar/<timestamp>", methods=["GET"])
-def get_uc_bar(timestamp):
-    json_dict = util.create_uncertainty_bar_dict()
-    return jsonify(json_dict)
-
-@cross_origin()
-@app.route("/GetF1/<timestamp>", methods=["GET"])
-def get_f1(timestamp):
-    json_dict = util.create_f1_bar_dict()
-    return jsonify(json_dict)
-
-@cross_origin()
-@app.route("/GetROC/<timestamp>", methods=["GET"])
-def get_roc(timestamp):
-    json_dict = util.create_roc_dict()
+@app.route("/GetGraphs/<timestamp>", methods=["GET"])
+def get_Graphs(timestamp):
+    json_dict = util.get_graphs()
     return jsonify(json_dict)
 
 
