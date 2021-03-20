@@ -548,6 +548,19 @@ def create_f1_bar_dict():
     main_dict["score"] = s
     return main_dict
 
+def create_precision_bar_dict():
+    #df = train.test_df
+    #[l, b] = al.precision_per_class(df)
+    #s = al.f1_total(df)
+    b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l = [1,2,3,4,5,6,7,8]
+    f1_class_dict = {}
+    f1_class_dict["labels"] = l
+    f1_class_dict["data"] = b
+    main_dict = {}
+    main_dict["precision_class"] = f1_class_dict
+    return main_dict
+
 def create_roc_dict():
     #df = train.test_df
     #logit = train.t_logit
@@ -569,8 +582,10 @@ def get_graphs():
     uc_bar = create_uncertainty_bar_dict()
     f1_bar = create_f1_bar_dict()
     roc_line = create_roc_dict()
+    precision_bar = create_precision_bar_dict()
     graph_dict["UC_Hist"] = uc_hist
     graph_dict["UC_Bar"] = uc_bar
     graph_dict["F1"] = f1_bar
     graph_dict["ROC"] = roc_line
+    graph_dict["Precision"] = precision_bar
     return graph_dict
