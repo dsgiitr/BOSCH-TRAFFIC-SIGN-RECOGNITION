@@ -169,15 +169,8 @@ def get_Graphs3(timestamp):
 def sendData4():
     json_data = request.data
     util.get_analysis_info(json_data)
-    resp = jsonify(success=True)
-    return resp
-
-@cross_origin()
-@app.route("/GetGraphs4/<timestamp>", methods=["GET"])
-def get_Graphs4(timestamp):
     json_file = util.get_graphs_4()
     return send_file(json_file)
-    
 
 if __name__ == '__main__':
     app.run(debug=True)
