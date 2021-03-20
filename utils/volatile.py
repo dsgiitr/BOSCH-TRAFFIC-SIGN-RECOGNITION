@@ -5,9 +5,11 @@ import shutil
 import numpy as np
 import pandas as pd
 import json
+import utils.dataset_loader as dlr
 import utils.augmentations as ag
 import utils.transformations as tr
 import utils.training as train
+import utils.analysis as al
 from datetime import datetime
 from flask import current_app
 
@@ -491,4 +493,72 @@ def check_exit_signal():
     end_dict = {}
     end_dict["completed"] = train.completed
     return end_dict
-    
+
+def create_uncertainty_hist_dict():
+    #df = train.test_df
+    #[h_1, l_1, h_2, l_2] = al.uncertainty_hist(df)
+    h_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_1 = [1,3,5,7,9,11,13,15]
+    h_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_2 = [2,4,6,8,10,12,14,16]
+    correct_dict = {}
+    correct_dict["labels"] = l_1
+    correct_dict["data"] = h_1
+    wrong_dict = {}
+    wrong_dict["labels"] = l_2
+    wrong_dict["data"] = h_2
+    main_dict = {}
+    main_dict["correct"] = correct_dict
+    main_dict["wrong"] = wrong_dict
+    return main_dict
+
+def create_uncertainty_bar_dict():
+    #root_dir = os.path.dirname(os.path.realpath(__file__))
+    #loc_path = os.path.join(root_dir, '..', 'data', 'modified')
+    #n_classes = len(dlr.find_classes(loc_path)[0])
+    #df = train.test_df
+    #[b_1, l_1, b_2, l_2] = al.uncertainty_bar(n_classes, df)
+    b_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_1 = [1,2,3,4,5,6,7,8]
+    b_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l_2 = [1,2,3,4,5,6,7,8]
+    epistemic_dict = {}
+    epistemic_dict["labels"] = l_1
+    epistemic_dict["data"] = b_1
+    aleatoric_dict = {}
+    aleatoric_dict["labels"] = l_2
+    aleatoric_dict["data"] = b_2
+    main_dict = {}
+    main_dict["epistemic"] = epistemic_dict
+    main_dict["aleatoric"] = aleatoric_dict
+    return main_dict
+
+def create_f1_bar_dict():
+    #df = train.test_df
+    #[l, b] = al.f1_per_class(df)
+    #s = al.f1_total(df)
+    b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    l = [1,2,3,4,5,6,7,8]
+    s = 0.99
+    f1_class_dict = {}
+    f1_class_dict["labels"] = l
+    f1_class_dict["data"] = b
+    main_dict = {}
+    main_dict["f1_class"] = f1_class_dict
+    main_dict["score"] = s
+    return main_dict
+
+def create_roc_dict():
+    #df = train.test_df
+    #logit = train.t_logit
+    #fpr, tpr = al.roc(df, logit)
+    fpr, tpr = [ [0.1,0.2,0.3],[0.1,0.2,0.3] ], [ [0.1,0.2,0.3],[0.2,0.4,0.6] ]
+    roc_list = []
+    for i in range(len(fpr)):
+        roc_dict = {}
+        roc_dict["x"] = fpr[i]
+        roc_dict["y"] = tpr[i]
+        roc_list.append(roc_dict)
+    main_dict = {}
+    main_dict["roc_curve"] = roc_list
+    return main_dict
