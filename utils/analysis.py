@@ -1,3 +1,4 @@
+import torch
 import pandas as pd
 import numpy as np
 from PIL import Image
@@ -5,6 +6,9 @@ import cv2
 from sklearn.metrics import confusion_matrix, f1_score, roc_curve
 from sklearn.preprocessing import label_binarize
 from torchvision import transforms
+import torch.nn.functional as F
+
+sz = 32
 test_transform = transforms.Compose([
     transforms.Resize((sz,sz)),
     transforms.ToTensor()
@@ -18,13 +22,16 @@ def uncertainty_hist(df):
   pred = df['prediction'].to_numpy().astype(np.int)
   conf = df['confidence'].to_numpy().astype(np.float)
   kernel_distance_normal,kernel_distance_wrong= [],[]
+  normal_labels, wrong_labels = [], []
 
-  for i in range (len(target)):
-    if target[i] == pred [i]:
+  for i in range(len(target)):
+    if target[i] == pred[i]:
+      normal_labels.append(target[i])
       kernel_distance_normal.append(conf[i])
     else:
+      wrong_labels.append(target[i])
       kernel_distance_wrong.append(conf[i])
-  return {"correct": np.array(kernel_distance_normal),"wrong": np.array(kernel_distance_wrong)}
+  return [kernel_distance_normal, normal_labels, kernel_distance_normal, wrong_labels]
 
 # per class scores
 def uncertainty_bar(n_classes, df):
@@ -34,15 +41,18 @@ def uncertainty_bar(n_classes, df):
   sig = df['sigma'].to_numpy().astype(np.float)
   epistemic = np.empty((n_classes, 0)).tolist()
   aleatoric = np.empty((n_classes, 0)).tolist()
+  epistemic_label, aleatoric_label = [], []
 
-  for i in range (len(target)):
+  for i in range(len(target)):
+    epistemic_label.append(target[i])
+    aleatoric_label.append(target[i])
     epistemic[target[i]].append(conf[i])
     aleatoric[target[i]].append(sig[i])
-  for i in range (n_classes):
+  for i in range(n_classes):
     epistemic[i] = np.array(epistemic[i]).mean()
     aleatoric[i] = np.array(aleatoric[i]).mean()
 
-  return {"epistemic":np.array(epistemic),"aleatoric":np.array(aleatoric)}
+  return [epistemic, epistemic_label, aleatoric, aleatoric_label]
 
 # per image score
 def uncertainty_scores(path, model, usecuda = True):
@@ -54,7 +64,7 @@ def uncertainty_scores(path, model, usecuda = True):
       img = img.cuda()
     img = img.unsqueeze(0)
     output = model(img).squeeze().cpu()
-    epistemic, aleatoric = output.max(0)[0].mean().item(), abs(network.sigma.squeeze().item())
+    epistemic, aleatoric = output.max(0)[0].mean().item(), abs(model.sigma.squeeze().item())
     return epistemic, aleatoric
 
 
@@ -79,7 +89,7 @@ def conf_matrix(df):
 def f1_per_class(df):
 
   data = df.to_numpy()
-  return f1_score(data[:, 0], data[:, 1], average=None)
+  return [data[:, 0], f1_score(data[:, 0], data[:, 1], average=None)]
 
 
 def f1_total(df):
@@ -88,16 +98,13 @@ def f1_total(df):
   return f1_score(data[:, 0], data[:, 1], average='macro')
 
 def roc(df1, logit):
-
   data = df1.to_numpy()
-  y = label_binarize(data[:, 0], classes=list(np.unique(data[:, 0]))
+  y = label_binarize(data[:, 0], classes=list(np.unique(data[:, 0])))
   n_classes = y.shape[1]
-  fpr = dict()
-  tpr = dict()
-  roc_auc = dict()
+  fpr = np.empty((n_classes, 0)).tolist()
+  tpr = np.empty((n_classes, 0)).tolist()
   for i in range(n_classes):
     fpr[i], tpr[i], _ = roc_curve(y[:, i], logit[:, i])
-
   return fpr, tpr
 
 
@@ -134,7 +141,7 @@ def gradcam(path, model, usecuda = True):
 
   with torch.no_grad():
       heatmap = torch.mean(activations, dim=1).cpu().unsqueeze(1)
-      heatmap = norm(torch.relu(heatmap));
+      heatmap = torch.norm(torch.relu(heatmap))
       map = F.interpolate(heatmap,(img.shape[2],img.shape[2]),mode='bilinear')
       map = map.squeeze().unsqueeze(2); img = img.squeeze().cpu().permute(1,2,0)*255; map = np.uint8(255 * map)
       map = cv2.applyColorMap(map, cv2.COLORMAP_JET)
@@ -165,7 +172,7 @@ def gradcam_noise(path, model, usecuda = True):
 
   with torch.no_grad():
       heatmap = torch.mean(activations, dim=1).cpu().unsqueeze(1)
-      heatmap = norm(torch.relu(heatmap));
+      heatmap = torch.norm(torch.relu(heatmap))
       map = F.interpolate(heatmap,(img.shape[2],img.shape[2]),mode='bilinear')
       map = map.squeeze().unsqueeze(2); img = img.squeeze().cpu().permute(1,2,0)*255; map = np.uint8(255 * map)
       map = cv2.applyColorMap(map, cv2.COLORMAP_JET)
