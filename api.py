@@ -24,6 +24,7 @@ app = Flask(__name__, static_url_path='')
 app.config["DEBUG"] = True
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['Access-Control-Allow-Origin'] = 'http://localhost:3000'
 
 
 @cross_origin()
@@ -102,12 +103,14 @@ def getModified16(timestamp):
 def send_js(path):
     return send_from_directory('data/', path)
 
+
 @cross_origin()
 @app.route("/Undo", methods=["POST"])
 def undo():
     util.undo_last_change()
     resp = jsonify(success=True)
     return resp
+
 
 @cross_origin()
 @app.route("/SendTransform16", methods=["POST"])
@@ -117,6 +120,7 @@ def apply16():
     resp = jsonify(success=True)
     return resp
 
+
 @cross_origin()
 @app.route("/SendTransformBatch", methods=["POST"])
 def applybatch():
@@ -124,26 +128,30 @@ def applybatch():
     resp = jsonify(success=True)
     return resp
 
-@cross_origin()
+
 @app.route("/SendHP", methods=["POST"])
+@cross_origin()
 def start_train():
-    json_data = request.data
-    util.start_training(json_data)
+    json_data = json.loads(request.data.decode('utf-8'))
+
+    util.start_training(json_data['data'])
     resp = jsonify(success=True)
     return resp
 
 
-@cross_origin()
-@app.route("/GetLink/<timestamp>", methods=["GET"])
+@ cross_origin()
+@ app.route("/GetLink/<timestamp>", methods=["GET"])
 def get_tb_link(timestamp):
     json_dict = util.get_tensorboard()
     return jsonify(json_dict)
 
-@cross_origin()
-@app.route("/CheckExit/<timestamp>", methods=["GET"])
+
+@ cross_origin()
+@ app.route("/CheckExit/<timestamp>", methods=["GET"])
 def check_exit(timestamp):
     json_dict = util.check_exit_signal()
     return jsonify(json_dict)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
