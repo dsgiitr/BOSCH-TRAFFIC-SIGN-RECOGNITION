@@ -561,31 +561,52 @@ def create_precision_bar_dict():
     main_dict["precision_class"] = f1_class_dict
     return main_dict
 
+def get_cm():
+    #df = train.test_df
+    #img_path = al.conf_matrix(df)
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
+    img_name = os.path.join(loc_path, "confusion.png")
+    return img_name
+
 def create_roc_dict():
     #df = train.test_df
     #logit = train.t_logit
     #fpr, tpr = al.roc(df, logit)
-    fpr, tpr = [ [0.1,0.2,0.3],[0.1,0.2,0.3] ], [ [0.1,0.2,0.3],[0.2,0.4,0.6] ]
+    fpr, tpr = [ [0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3] ], [ [0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6] ]
     roc_list = []
     for i in range(len(fpr)):
-        roc_dict = {}
-        roc_dict["x"] = fpr[i]
-        roc_dict["y"] = tpr[i]
-        roc_list.append(roc_dict)
+        roc_class_list = []
+        for j in range(len(fpr[i])):
+            roc_dict = {}
+            roc_dict["x"] = fpr[i][j]
+            roc_dict["y"] = tpr[i][j]
+            roc_class_list.append(roc_dict)
+        roc_list.append(roc_class_list)
     main_dict = {}
     main_dict["roc_curve"] = roc_list
     return main_dict
 
-def get_graphs():
+def get_graphs_1():
     graph_dict = {}
-    uc_hist = create_uncertainty_hist_dict()
-    uc_bar = create_uncertainty_bar_dict()
     f1_bar = create_f1_bar_dict()
     roc_line = create_roc_dict()
     precision_bar = create_precision_bar_dict()
-    graph_dict["UC_Hist"] = uc_hist
-    graph_dict["UC_Bar"] = uc_bar
     graph_dict["F1"] = f1_bar
     graph_dict["ROC"] = roc_line
     graph_dict["Precision"] = precision_bar
+    return graph_dict
+
+def get_graphs_2():
+    graph_dict = {}
+    cm = get_cm()
+    graph_dict["CM"] = cm
+    return graph_dict
+
+def get_graphs_3():
+    graph_dict = {}
+    uc_hist = create_uncertainty_hist_dict()
+    uc_bar = create_uncertainty_bar_dict()
+    graph_dict["UC_Hist"] = uc_hist
+    graph_dict["UC_Bar"] = uc_bar
     return graph_dict

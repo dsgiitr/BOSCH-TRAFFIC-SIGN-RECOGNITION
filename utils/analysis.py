@@ -108,7 +108,7 @@ def conf_matrix(df):
   plt.ylabel('True label')
   plt.xlabel('Predicted label')
   plt.ioff()
-  img_name = os.path.join(loc_path, "confusion.svg")
+  img_name = os.path.join(loc_path, "confusion.png")
   if os.path.exists(img_name):
       os.remove(img_name)
   plt.savefig(img_name)
@@ -280,7 +280,7 @@ def violinplot():
   violinplots(b,'Violin plot of Conv Biases')
   root_dir = os.path.dirname(os.path.realpath(__file__))
   loc_path = os.path.join(root_dir, '..', 'data', 'analysis')
-  img_name = os.path.join(loc_path, "violinplot.svg")
+  img_name = os.path.join(loc_path, "violinplot.png")
   if os.path.exists(img_name):
     os.remove(img_name)
   plt.savefig(img_name)
