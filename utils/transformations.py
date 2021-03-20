@@ -3,12 +3,70 @@ import pywt
 import numpy as np
 
 def Hist_Eq(img):
+    """
+    Applies Histogram Equalization to the input image
+    
+    Args:
+        img: Input image to be augmented
+    Output:
+        timg: Equalized Image
+    
+    Source:
+        https://docs.opencv.org/master/
+        
+    Reference:
+       TY  - CONF
+        TI  - Study on Histogram Equalization
+        T2  - 2011 2nd International Symposium on Intelligence Information Processing and Trusted Computing
+        SP  - 177
+        EP  - 179
+        AU  - W. Zhihong
+        AU  - X. Xiaohong
+        PY  - 2011
+        DO  - 10.1109/IPTC.2011.52
+        JO  - 2011 2nd International Symposium on Intelligence Information Processing and Trusted Computing
+        JA  - 2011 2nd International Symposium on Intelligence Information Processing and Trusted Computing
+        Y1  - 22-23 Oct. 2011
+    """
     img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     heqv = cv2.equalizeHist(img_grey)
     img_new = cv2.cvtColor(heqv, cv2.COLOR_GRAY2BGR)
     return img_new
 
+
+
+
+
 def CLAHE(img, clip_limit=2.0, tile_grid_size=(8,8)):
+     """
+    Applies Contrast Limited Adaptive Histogram Equalization to the input image
+    
+    Args:
+        img: Input image to be augmented
+        clip_limit(float): 
+            Clipping Limit for CLAHE
+            Default: 2.0
+        title_grid_size(tuple): 
+            Grid Size of Title
+            Default:(8,8)
+        
+    Output:
+        timg: Contrast Limited Adaptive Histogram Equalized Image
+    
+    Source:
+        https://docs.opencv.org/master/
+        
+    Reference:
+        @INPROCEEDINGS{6968381,
+          author={G. {Yadav} and S. {Maheshwari} and A. {Agarwal}},
+          booktitle={2014 International Conference on Advances in Computing, Communications and Informatics (ICACCI)}, 
+          title={Contrast limited adaptive histogram equalization based enhancement for real time video system}, 
+          year={2014},
+          volume={},
+          number={},
+          pages={2392-2397},
+          doi={10.1109/ICACCI.2014.6968381}}
+    """
     img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
     clh = clahe.apply(img_grey)
