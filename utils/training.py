@@ -8,7 +8,8 @@ import os, shutil
 import pandas as pd
 import numpy as np
 import utils.dataset_loader as dl
-
+from flask import current_app
+import subprocess 
 valid_df = []
 v_logit = []
 model = []
@@ -21,8 +22,8 @@ val_loader = []
 completed = "false"
 sz = 40
 
-def trainlog(epoch, correct, loss):
-  print("epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss))
+def trainlog(name, epoch, correct, loss):
+  print("name = {}, epoch = {}, correct = {}, loss = {}".format(name,epoch,correct,loss))
 
 def calc_gradient_penalty(x, y_pred_sum):
     gradients = torch.autograd.grad(
@@ -58,6 +59,7 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
   scheduler = optim.lr_scheduler.MultiStepLR(optimizer,[8,10,14],0.5)
 
   for epoch in range(epochs):
+    current_app.logger.info(epoch)
     loss_=[]
     correct_=0
 
@@ -67,10 +69,13 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
         torch.cuda.empty_cache()
         data=data.cuda()
         target=target.cuda()
+      print("this is here 1 \n\n")
       model.train()
 
       optimizer.zero_grad()
+      print("this is here 2 \n\n")
       output = model(data)
+      print("this is here 3 \n")
       pred = output.data.argmax(1).long()
       datain = model.datain
       loss = 10*F.binary_cross_entropy(output, F.one_hot(target,43).float()) + lm*calc_gradient_penalty(datain,output.sum(1))
@@ -83,6 +88,7 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
 
       with torch.no_grad():
         model.eval()
+        print("yahaa fatttaa hai")
         model.update_embeddings(data,F.one_hot(target.long(),43).float())
 
       if batch_idx % log_interval == 0:
@@ -122,12 +128,13 @@ def validation(model,val_loader,cudav):
 
   with torch.no_grad():
     for _,(loc, data, target) in enumerate(val_loader):
+      current_app.logger.info("starting validation")
       target = target.long()
       if cudav:
         torch.cuda.empty_cache()
         data = data.cuda()
         target = target.cuda()
-
+      current_app.logger.info("aur bey pehelaaa log")
       output = model(data)
       pred = output.data.argmax(1).long()
       conf = output.data.max(1)[0]
@@ -221,6 +228,7 @@ def validation(model,val_loader,cudav):
 
 
 def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
+    current_app.logger.info("about to run training first time of the first training")
     folder = 'tensorboard'
     for filename in os.listdir(folder):
       file_path = os.path.join(folder, filename)
@@ -232,24 +240,34 @@ def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,cent
       except Exception as e:
           print('Failed to delete %s. Reason: %s' % (file_path, e))
     # tensorboard
-    os.system("tensorboard --reload_interval 15 --logdir tensorboard")
-
+    current_app.logger.info("reached here")
+    # os.system("tensorboard --reload_interval 15 --logdir tensorboard")
+    tensorboard_proc = subprocess.Popen(["tensorboard","--reload_interval","15", "--logdir","tensorboard"])
+    current_app.logger.info("tensorflow launched \n")
     root_dir = os.path.dirname(os.path.realpath(__file__))
     train_path = os.path.join(root_dir, '..', 'data', 'split', 'train')
     valid_path = os.path.join(root_dir, '..', 'data', 'split', 'valid')
     train_loader = dl.create_loader(train_path, batch_size=batch_size, shuffle=True,  sz = img_size)
     valid_loader = dl.create_loader(valid_path, batch_size=batch_size, shuffle=False, sz = img_size)
-    global model
+    current_app.logger.info("hellow thereakfajsfdlajfdlajflakjl")
+    current_app.logger.info(len(valid_loader.dataset))
+    global model, writer
     model = makemodel(layers, centroid_size)
+    current_app.logger.info("model is made \n")
     for _,data,target in train_loader:
       writer.add_embedding(data.view(data.shape[0],-1),metadata=target,label_img=data)
       writer.add_graph(model.cpu(), data)
       break
-    if torch.cuda.is_available():
-      use_gpu = True
-      model.cuda()
-    train(model,train_loader,val_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
-    validation(model,val_loader,use_gpu)
+    # if torch.cuda.is_available():
+    #   print("haan bhai chal raha hain chaude mat")
+    #   use_gpu = True
+    #   model.cuda()
+    # else:
+    #   print("nahi chal raha gaand maraa")
+    use_gpu = False
+    current_app.logger.info("about to start training \n")
+    train(model,train_loader,valid_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
+    validation(model,valid_loader,use_gpu)
     global completed
     completed = "true"
 
@@ -438,8 +456,8 @@ def makemodel(layers, embedding_size):
         y_pred = self.rbf(z)
         return y_pred
 
-  if torch.cuda.is_available():
-    main_model = CNN_DUQ(32, 43, embedding_size, 256*3*3, 0.6, 0.999, True).float().cuda()
-  else:
-    main_model = CNN_DUQ(32, 43, embedding_size, 256*3*3, 0.6, 0.999, True).float()
+  # if torch.cuda.is_available():
+  #   main_model = CNN_DUQ(32, 43, embedding_size, 256*3*3, 0.6, 0.999, True).float().cuda()
+  # else:
+  main_model = CNN_DUQ(32, 43, embedding_size, 256*3*3, 0.6, 0.999, True).float()
   return main_model

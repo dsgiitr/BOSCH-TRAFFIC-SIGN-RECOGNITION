@@ -55,7 +55,7 @@ def splitDataset():
 @cross_origin()
 @app.route("/SendSplit/<timestamp>", methods=["GET"])
 def getSplitData(timestamp):
-    json_file = util.create_train_test_json()
+    json_file = util.create_train_valid_json()
     return send_file(json_file)
 
 

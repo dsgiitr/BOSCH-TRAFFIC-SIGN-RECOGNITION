@@ -543,12 +543,12 @@ def get_layers(layers):
 def start_training(data):
     main_dict = data
     optimizer = main_dict["optimizer"]
-    epochs = main_dict["epochs"]
-    batch_size = main_dict["batchSize"]
-    lr = main_dict["learningRate"]
-    centroid_size = main_dict["centroidSize"]
-    lm = main_dict["lm"]
-    weight_decay = main_dict["weightDecay"]
+    epochs = int(main_dict["epochs"])
+    batch_size = int(main_dict["batchSize"])
+    lr = float(main_dict["learningRate"])
+    centroid_size = int(main_dict["centroidSize"])
+    lm = float(main_dict["lm"])
+    weight_decay = float(main_dict["weightDecay"])
     layers = get_layers(main_dict["layers"])
     train.runtraining(layers, epochs, batch_size, lr, centroid_size, lm, weight_decay, optimizer)
 
