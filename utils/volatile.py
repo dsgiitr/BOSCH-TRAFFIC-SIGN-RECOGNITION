@@ -550,8 +550,7 @@ def start_training(data):
     lm = main_dict["lm"]
     weight_decay = main_dict["weightDecay"]
     layers = get_layers(main_dict["layers"])
-    # train.makemodel(layers)
-    # train.runtraining(epochs, batch_size, lr, centroid_size, lm, weight_decay, optimizer)
+    train.runtraining(layers, epochs, batch_size, lr, centroid_size, lm, weight_decay, optimizer)
 
 
 def get_tensorboard():
@@ -566,7 +565,7 @@ def check_exit_signal():
     return end_dict
 
 def create_uncertainty_hist_dict():
-    #df = train.test_df
+    #df = train.valid_df
     #[h_1, l_1, h_2, l_2] = al.uncertainty_hist(df)
     h_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
     l_1 = [1,3,5,7,9,11,13,15]
@@ -587,7 +586,7 @@ def create_uncertainty_bar_dict():
     #root_dir = os.path.dirname(os.path.realpath(__file__))
     #loc_path = os.path.join(root_dir, '..', 'data', 'modified')
     #n_classes = len(dlr.find_classes(loc_path)[0])
-    #df = train.test_df
+    #df = train.valid_df
     #[b_1, l_1, b_2, l_2] = al.uncertainty_bar(n_classes, df)
     b_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
     l_1 = [1,2,3,4,5,6,7,8]
@@ -605,7 +604,7 @@ def create_uncertainty_bar_dict():
     return main_dict
 
 def create_f1_bar_dict():
-    #df = train.test_df
+    #df = train.valid_df
     #[l, b] = al.f1_per_class(df)
     #s = al.f1_total(df)
     b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
@@ -620,7 +619,7 @@ def create_f1_bar_dict():
     return main_dict
 
 def create_precision_bar_dict():
-    #df = train.test_df
+    #df = train.valid_df
     #[l, b] = al.precision_per_class(df)
     #s = al.f1_total(df)
     b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
@@ -633,15 +632,15 @@ def create_precision_bar_dict():
     return main_dict
 
 def get_cm():
-    #df = train.test_df
+    #df = train.valid_df
     #img_path = al.conf_matrix(df)
     loc_path = os.path.join('data', 'analysis')
     img_name = os.path.join(loc_path, "confusion.png")
     return img_name
 
 def create_roc_dict():
-    #df = train.test_df
-    #logit = train.t_logit
+    #df = train.valid_df
+    #logit = train.v_logit
     #fpr, tpr = al.roc(df, logit)
     fpr, tpr = [ [0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3] ], [ [0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6] ]
     roc_list = []

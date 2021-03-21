@@ -10,9 +10,7 @@ import numpy as np
 import utils.dataset_loader as dl
 
 valid_df = []
-test_df = []
 v_logit = []
-t_logit = []
 model = []
 url = "http://localhost:6006/"
 path = os.getcwd()
@@ -20,7 +18,6 @@ img_size = 40
 writer = SummaryWriter('tensorboard')
 train_loader = []
 val_loader = []
-test_loader = []
 completed = "false"
 sz = 40
 
@@ -165,65 +162,65 @@ def validation(model,val_loader,cudav):
   return 100.*correct_/len(val_loader.dataset),np.array(val_loss_).mean()
 
 
-def test(model,test_loader,cudav):
-  model.eval()
-  criterion = nn.CrossEntropyLoss()
-  global t_logit
-  y_true = []
-  y = []
-  y_conf = []
-  t_logit = []
-  sig = []
-  location = []
-  test_loss_ = []
-  correct_ = 0
+# def test(model,test_loader,cudav):
+#   model.eval()
+#   criterion = nn.CrossEntropyLoss()
+#   global t_logit
+#   y_true = []
+#   y = []
+#   y_conf = []
+#   t_logit = []
+#   sig = []
+#   location = []
+#   test_loss_ = []
+#   correct_ = 0
 
-  with torch.no_grad():
-    for _,(loc, data, target) in enumerate(test_loader):
-      target = target.long()
-      if cudav:
-        torch.cuda.empty_cache()
-        data = data.cuda()
-        target = target.cuda()
+#   with torch.no_grad():
+#     for _,(loc, data, target) in enumerate(test_loader):
+#       target = target.long()
+#       if cudav:
+#         torch.cuda.empty_cache()
+#         data = data.cuda()
+#         target = target.cuda()
 
-      output = model(data)
-      pred = output.data.argmax(1).long()
-      conf = output.data.max(1)[0]
-      sigma = model.sigma
+#       output = model(data)
+#       pred = output.data.argmax(1).long()
+#       conf = output.data.max(1)[0]
+#       sigma = model.sigma
 
-      test_loss = criterion(output, target.long()).item()
-      correct = pred.eq(target.long().data.view_as(pred)).sum().item()
-      test_loss_.append(test_loss)
-      correct_+correct
+#       test_loss = criterion(output, target.long()).item()
+#       correct = pred.eq(target.long().data.view_as(pred)).sum().item()
+#       test_loss_.append(test_loss)
+#       correct_+correct
 
-      y_true.append(target.cpu().numpy())
-      y_conf.append(conf.cpu().numpy())
-      y.append(pred.cpu().numpy())
-      t_logit.append(output.cpu().numpy())
-      sig.append(sigma.cpu().numpy())
-      location.append(np.array(loc))
+#       y_true.append(target.cpu().numpy())
+#       y_conf.append(conf.cpu().numpy())
+#       y.append(pred.cpu().numpy())
+#       t_logit.append(output.cpu().numpy())
+#       sig.append(sigma.cpu().numpy())
+#       location.append(np.array(loc))
 
-  y_true = np.concatenate(y_true)
-  y_conf = np.concatenate(y_conf)
-  y = np.concatenate(y)
-  t_logit = np.concatenate(t_logit)
-  sig = np.concatenate(sig)
-  location = np.concatenate(location)
-  data = np.column_stack([y_true, y, y_conf,sig, location])
+#   y_true = np.concatenate(y_true)
+#   y_conf = np.concatenate(y_conf)
+#   y = np.concatenate(y)
+#   t_logit = np.concatenate(t_logit)
+#   sig = np.concatenate(sig)
+#   location = np.concatenate(location)
+#   data = np.column_stack([y_true, y, y_conf,sig, location])
 
-  global test_df
-  test_df = pd.DataFrame(data=data,columns=['label','prediction','confidence','sigma','location'])
-  if cudav:
-    torch.cuda.empty_cache()
-
-
-def trainlog(message,epoch, correct, loss):
-    print(message + " epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss))
+#   global test_df
+#   test_df = pd.DataFrame(data=data,columns=['label','prediction','confidence','sigma','location'])
+#   if cudav:
+#     torch.cuda.empty_cache()
 
 
+# def trainlog(message,epoch, correct, loss):
+#     print(message + " epoch = {}, correct = {}, loss = {}".format(epoch,correct,loss))
 
 
-def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
+
+
+def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
     folder = 'tensorboard'
     for filename in os.listdir(folder):
       file_path = os.path.join(folder, filename)
@@ -239,9 +236,11 @@ def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_siz
 
     root_dir = os.path.dirname(os.path.realpath(__file__))
     train_path = os.path.join(root_dir, '..', 'data', 'split', 'train')
-    test_path = os.path.join(root_dir, '..', 'data', 'split', 'test')
+    valid_path = os.path.join(root_dir, '..', 'data', 'split', 'valid')
     train_loader = dl.create_loader(train_path, batch_size=batch_size, shuffle=True,  sz = img_size)
-    test_loader = dl.create_loader(test_path, batch_size=batch_size, shuffle=False, sz = img_size)
+    valid_loader = dl.create_loader(valid_path, batch_size=batch_size, shuffle=False, sz = img_size)
+    global model
+    model = makemodel(layers, centroid_size)
     for _,data,target in train_loader:
       writer.add_embedding(data.view(data.shape[0],-1),metadata=target,label_img=data)
       writer.add_graph(model.cpu(), data)
@@ -253,8 +252,6 @@ def runtraining(epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_siz
     validation(model,val_loader,use_gpu)
     global completed
     completed = "true"
-
-
 
 
 def makemodel(layers, embedding_size):
@@ -441,4 +438,8 @@ def makemodel(layers, embedding_size):
         y_pred = self.rbf(z)
         return y_pred
 
-  return CNN_DUQ(32, 43, embedding_size, 256*3*3, 0.6, 0.999, True).float().cuda()
+  if torch.cuda.is_available():
+    main_model = CNN_DUQ(32, 43, embedding_size, 256*3*3, 0.6, 0.999, True).float().cuda()
+  else:
+    main_model = CNN_DUQ(32, 43, embedding_size, 256*3*3, 0.6, 0.999, True).float()
+  return main_model
