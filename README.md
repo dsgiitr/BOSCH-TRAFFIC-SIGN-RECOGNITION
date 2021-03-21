@@ -1,7 +1,7 @@
 # BOSCH-TRAFFIC-SIGN-RECOGNITION
 ## DataSet Description
 
-##Augmentation & Transformation 
+## Augmentation & Transformation 
 ### Augmentation Features
 |      Augmentation     |         Function        |                                                Description                                               | Parameters (apart from image) along with default values |
 |:---------------------:|:-----------------------:|:--------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------:|
