@@ -15,13 +15,6 @@ from flask import current_app
 
 
 def create_dir(file_dir):
-     """
-    Creates a new directory if it doesnt exist before
-    
-    Args:
-        file_dir(str): Path of the directory to be made
-        
-    """
     if os.path.exists(file_dir):
         shutil.rmtree(file_dir)
         os.mkdir(file_dir)
@@ -30,16 +23,6 @@ def create_dir(file_dir):
 
 
 def name_split(data_req):
-     """
-    Extracts Path, class name, image name and extension from image path
-    
-    Args:
-        data_req(str): Path of requested Image
-    Output:
-        df(Pandas DatasFrame):
-            Name split information of data_request Path
-            columns=["Path", "Class Name", "Image Name", "Extension"]
-    """
     data_df = []
     for data in data_req:
         path = data[0]
@@ -54,13 +37,6 @@ def name_split(data_req):
 
 
 def save_modified(image_df, modified_loc):
-     """
-    Save Modified Image at modified location
-    
-    Args:
-        img_df(df): DataFrame of Images to shift
-        modified_loc(tuple):Location to add modified Image
-    """
     class_list = image_df["Class Name"].unique()
     for class_name in class_list:
         dir_path = os.path.join(modified_loc, str(class_name))
@@ -96,15 +72,6 @@ def modified_function(name, limit_class):
 
 
 def create_json_file(root_dir, output_name, select_condition, modified_condition):
-     """
-    Creates a json file of image data directory
-    
-    Args:
-        root_dir(str): Path to image data folder
-        output_name: Name of Output json file
-        select_condition: Condition to select images by default
-        modified_condition: List of user control on image selection
-    """
     json_dict = {}
     class_object_list = []
     for _, classes, _ in os.walk(root_dir, topdown=True):
