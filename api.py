@@ -124,7 +124,8 @@ def apply16():
 @cross_origin()
 @app.route("/SendTransformBatch", methods=["POST"])
 def applybatch():
-    util.apply_batch()
+    json_data = request.data
+    util.apply_batch(json_data)
     resp = jsonify(success=True)
     return resp
 
@@ -179,6 +180,12 @@ def sendData4():
     util.get_analysis_info(json_data)
     json_file = util.get_graphs_4()
     return send_file(json_file)
+
+@cross_origin()
+@app.route("/GetGraphs5/<timestamp>", methods=["GET"])
+def get_Graphs5(timestamp):
+    json_dict = util.get_graphs_5()
+    return jsonify(json_dict)
 
 if __name__ == '__main__':
     app.run(debug=True)
