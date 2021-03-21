@@ -55,8 +55,8 @@ def save_modified(image_df, modified_loc):
             shutil.copy2(org_loc, new_loc)
 
 
-def select_function(name):
-    if (int(name) % 2 == 0):
+def select_function(name, limit_class):
+    if int(name) < limit_class:
         selected = "true"
     else:
         selected = "false"
@@ -81,10 +81,15 @@ def create_json_file(root_dir, output_name, select_condition, modified_condition
             path = os.path.join(root_dir, class_name)
             class_dict["path"] = path
             if modified_condition == True:
-                NUM_CLASSES = 5
+                NUM_CLASSES = 43
                 modified = modified_function(class_name, NUM_CLASSES)
             else:
                 modified = "true"
+            if select_condition == True:
+                NUM_CLASSES = 43
+                selected = select_function(class_name, NUM_CLASSES)
+            else:
+                selected = "false"
             img_object_list = []
             for _, _, images in os.walk(path, topdown=True):
                 for img_name in images:
@@ -93,10 +98,6 @@ def create_json_file(root_dir, output_name, select_condition, modified_condition
                     path_img = os.path.join(path, img_name)
                     img_dict["path"] = path_img
                     img_dict["can_be_modified"] = modified
-                    if select_condition == True:
-                        selected = select_function(img_name[0:-4])
-                    else:
-                        selected = "false"
                     img_dict["selected"] = selected
                     img_object_list.append(img_dict)
             class_dict["images"] = img_object_list
@@ -146,31 +147,31 @@ def get_train_percentage(json_data):
     return fraction
 
 
-def split_images(root_dir, train_dir, test_dir, train_fraction):
+def split_images(root_dir, train_dir, valid_dir, train_fraction):
     for _, classes, _ in os.walk(root_dir):
         for class_name in classes:
             train_dir_path = os.path.join(train_dir, str(class_name))
-            test_dir_path = os.path.join(test_dir, str(class_name))
+            valid_dir_path = os.path.join(valid_dir, str(class_name))
             if not os.path.exists(train_dir_path):
                 os.mkdir(train_dir_path)
-            if not os.path.exists(test_dir_path):
-                os.mkdir(test_dir_path)
+            if not os.path.exists(valid_dir_path):
+                os.mkdir(valid_dir_path)
             path = os.path.join(root_dir, str(class_name))
             for _, _, images in os.walk(path):
                 num_images = len(images)
                 num_train = int(train_fraction*num_images)
                 train_images = random.sample(images, num_train)
-                test_images = [
+                valid_images = [
                     img for img in images if img not in train_images]
                 for img_name in train_images:
                     path_img = os.path.join(path, img_name)
                     org_loc = path_img
                     new_loc = os.path.join(train_dir_path, str(img_name))
                     shutil.copy2(org_loc, new_loc)
-                for img_name in test_images:
+                for img_name in valid_images:
                     path_img = os.path.join(path, img_name)
                     org_loc = path_img
-                    new_loc = os.path.join(test_dir_path, str(img_name))
+                    new_loc = os.path.join(valid_dir_path, str(img_name))
                     shutil.copy2(org_loc, new_loc)
 
 
@@ -178,33 +179,33 @@ def transfer_to_split(json_data):
     loc_path = os.path.dirname(os.path.realpath(__file__))
     modified_loc = os.path.join(loc_path, "..", "data", "modified")
     split_train_loc = os.path.join(loc_path, "..", "data", "split", "train")
-    split_test_loc = os.path.join(loc_path, "..", "data", "split", "test")
+    split_valid_loc = os.path.join(loc_path, "..", "data", "split", "valid")
     create_dir(split_train_loc)
-    create_dir(split_test_loc)
+    create_dir(split_valid_loc)
     fraction = get_train_percentage(json_data)
-    split_images(modified_loc, split_train_loc, split_test_loc, fraction)
+    split_images(modified_loc, split_train_loc, split_valid_loc, fraction)
 
 
-def create_train_test_json():
+def create_train_valid_json():
     main_dict = {}
     loc_path = os.path.dirname(os.path.realpath(__file__))
     train_dir = os.path.join(loc_path, '..', 'data', 'split', 'train')
-    test_dir = os.path.join(loc_path, '..', 'data', 'split', 'test')
+    valid_dir = os.path.join(loc_path, '..', 'data', 'split', 'valid')
     train_json = os.path.join(train_dir, 'train.json')
-    test_json = os.path.join(test_dir, 'test.json')
+    valid_json = os.path.join(valid_dir, 'valid.json')
     if os.path.exists(train_json):
         os.remove(train_json)
-    if os.path.exists(test_json):
-        os.remove(test_json)
+    if os.path.exists(valid_json):
+        os.remove(valid_json)
     create_json_file(train_dir, 'train.json', False, False)
-    create_json_file(test_dir, 'test.json', False, False)
+    create_json_file(valid_dir, 'valid.json', False, False)
     with open(train_json) as f:
         train_dict = json.load(f)
-    with open(test_json) as f:
-        test_dict = json.load(f)
+    with open(valid_json) as f:
+        valid_dict = json.load(f)
     main_dict["train"] = train_dict
-    main_dict["test"] = test_dict
-    out_path = os.path.join(loc_path, '..', 'data', 'split', 'train_test.json')
+    main_dict["valid"] = valid_dict
+    out_path = os.path.join(loc_path, '..', 'data', 'split', 'train_valid.json')
     if os.path.exists(out_path):
         os.remove(out_path)
     with open(out_path, 'w') as json_file:
@@ -237,26 +238,26 @@ def create_random_batch(folder, percent):
     loc_path = os.path.dirname(os.path.realpath(__file__))
     modified_loc = os.path.join(loc_path, "..", "data", "modified")
     split_train_loc = os.path.join(loc_path, "..", "data", "split", "train")
-    split_test_loc = os.path.join(loc_path, "..", "data", "split", "test")
+    split_valid_loc = os.path.join(loc_path, "..", "data", "split", "valid")
     fraction = percent/100
     if folder == "train":
         file_dir = split_train_loc
         select_random_batch(loc_path, file_dir, fraction, folder)
-    elif folder == "test":
-        file_dir = split_test_loc
+    elif folder == "valid":
+        file_dir = split_valid_loc
         select_random_batch(loc_path, file_dir, fraction, folder)
     elif folder == "complete":
         file_dir_1 = split_train_loc
-        file_dir_2 = split_test_loc
+        file_dir_2 = split_valid_loc
         select_random_batch(loc_path, file_dir_1, fraction, "train")
-        select_random_batch(loc_path, file_dir_2, fraction, "test")
+        select_random_batch(loc_path, file_dir_2, fraction, "valid")
     create_image_folders()
 
 
 def create_manual_batch(data):
     mod_dict = json.loads(data)
     train_dict = mod_dict["train"]
-    test_dict = mod_dict["test"]
+    valid_dict = mod_dict["valid"]
     root_dir = os.path.dirname(os.path.realpath(__file__))
     mod_dir = os.path.join(root_dir, '..', 'data', 'batch')
     create_dir(mod_dir)
@@ -274,11 +275,11 @@ def create_manual_batch(data):
                 org_loc = img_dict["path"]
                 new_loc = os.path.join(final_dir_path, img_name)
                 shutil.copy2(org_loc, new_loc)
-    for class_dict in test_dict["folders"]:
+    for class_dict in valid_dict["folders"]:
         class_name = class_dict["name"]
         for img_dict in class_dict["images"]:
             if img_dict["selected"] == "true":
-                final_dir = os.path.join(mod_dir, "test")
+                final_dir = os.path.join(mod_dir, "valid")
                 if not os.path.exists(final_dir):
                     os.mkdir(final_dir)
                 final_dir_path = os.path.join(final_dir, str(class_name))
@@ -465,7 +466,9 @@ def apply_16(data):
                 os.remove(path_img)
 
 
-def apply_batch():
+def apply_batch(data):
+    type_dict = json.loads(data)
+    save_type = type_dict["action"]
     root_dir = os.path.dirname(os.path.realpath(__file__))
     main_path = os.path.join(root_dir, '..', 'data', 'batch')
     final_path = os.path.join(root_dir, '..', 'data', 'split')
@@ -495,6 +498,10 @@ def apply_batch():
                                 if os.path.exists(path_img):
                                     os.remove(path_img)
                                 cv2.imwrite(new_img_path, img_new)
+                                if save_type == "replace":
+                                    orig_final_path = os.path.join(final_path, type, str(class_name), img_name)
+                                    if os.path.exists(orig_final_path):
+                                        os.remove(orig_final_path)
     for _, types, _ in os.walk(main_path):
         for type in types:
             type_path = os.path.join(main_path, type)
@@ -504,9 +511,9 @@ def apply_batch():
                     for _, _, images in os.walk(class_path):
                         for img_name in images:
                             org_loc = os.path.join(class_path, img_name)
-                            new_loc = os.path.join(
-                                final_path, type, str(class_name), img_name)
+                            new_loc = os.path.join(final_path, type, str(class_name), img_name)
                             shutil.copy2(org_loc, new_loc)
+
     reset_aug_list()
 
 
@@ -673,6 +680,11 @@ def get_uc_scores(path):
     uc_dict["aleatoric"] = aleatoric
     return uc_dict
 
+def get_violin_plot():
+    #path = al.violinplot()
+    path = os.path.join('data','analysis','violinplot.png')
+    return path
+
 def get_graphs_1():
     graph_dict = {}
     f1_bar = create_f1_bar_dict()
@@ -699,9 +711,9 @@ def get_graphs_3():
 
 def apply_augs(path, angle, kdim, amount, mean, variance):
     root_dir = os.path.dirname(os.path.realpath(__file__))
-    ext = path.split(".")[1]
-    img_name = "original." + ext 
-    mod_img_name = "modified." + ext
+    ext = os.path.splitext(path)[1]
+    img_name = "original" + ext 
+    mod_img_name = "modified" + ext
     final_path = os.path.join(root_dir, '..', 'data', 'analysis', img_name)
     final_mod_path = os.path.join(root_dir, '..', 'data', 'analysis', mod_img_name)
     if os.path.exists(final_path):
@@ -750,6 +762,12 @@ def get_graphs_4():
     root_dir = os.path.dirname(os.path.realpath(__file__))
     json_path = os.path.join(root_dir, '..', 'data', 'analysis', 'analysis.json')
     return json_path
+
+def get_graphs_5():
+    graph_dict = {}
+    vp = get_violin_plot()
+    graph_dict["VP"] = vp
+    return graph_dict
 
 
 
