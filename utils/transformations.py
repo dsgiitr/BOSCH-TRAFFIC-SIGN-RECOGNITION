@@ -45,7 +45,7 @@ def CLAHE(img, clip_limit=2.0, tile_grid_size=(8,8)):
         clip_limit(float): 
             Clipping Limit for CLAHE
             Default: 2.0
-        title_grid_size(tuple): 
+        tile_grid_size(tuple): 
             Grid Size of Title
             Default:(8,8)
         
@@ -159,7 +159,7 @@ def Discrete_Wavelet(img, mode='haar', level=4):
             default: 'haar'
             
         level(int):
-            Number of levels to applt wavelet transformation
+            Number of levels to apply wavelet transformation
             default: 4
     Output:
         timg: Filtered Image
