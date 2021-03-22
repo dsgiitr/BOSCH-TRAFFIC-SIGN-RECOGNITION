@@ -205,7 +205,8 @@ def create_train_valid_json():
         valid_dict = json.load(f)
     main_dict["train"] = train_dict
     main_dict["valid"] = valid_dict
-    out_path = os.path.join(loc_path, '..', 'data', 'split', 'train_valid.json')
+    out_path = os.path.join(loc_path, '..', 'data',
+                            'split', 'train_valid.json')
     if os.path.exists(out_path):
         os.remove(out_path)
     with open(out_path, 'w') as json_file:
@@ -499,7 +500,8 @@ def apply_batch(data):
                                     os.remove(path_img)
                                 cv2.imwrite(new_img_path, img_new)
                                 if save_type == "replace":
-                                    orig_final_path = os.path.join(final_path, type, str(class_name), img_name)
+                                    orig_final_path = os.path.join(
+                                        final_path, type, str(class_name), img_name)
                                     if os.path.exists(orig_final_path):
                                         os.remove(orig_final_path)
     for _, types, _ in os.walk(main_path):
@@ -511,7 +513,8 @@ def apply_batch(data):
                     for _, _, images in os.walk(class_path):
                         for img_name in images:
                             org_loc = os.path.join(class_path, img_name)
-                            new_loc = os.path.join(final_path, type, str(class_name), img_name)
+                            new_loc = os.path.join(
+                                final_path, type, str(class_name), img_name)
                             shutil.copy2(org_loc, new_loc)
 
     reset_aug_list()
@@ -550,19 +553,16 @@ def start_training(data):
     lm = float(main_dict["lm"])
     weight_decay = float(main_dict["weightDecay"])
     layers = get_layers(main_dict["layers"])
-    train.runtraining(layers, epochs, batch_size, lr, centroid_size, lm, weight_decay, optimizer)
+    train.runtraining(layers, epochs, batch_size, lr,
+                      centroid_size, lm, weight_decay, optimizer)
 
 
-def get_tensorboard():
+def get_tensorboard_link():
     link_dict = {}
     link_dict["link"] = train.url
+    link_dict["link_exists"] = train.completed
     return link_dict
 
-
-def check_exit_signal():
-    end_dict = {}
-    end_dict["completed"] = train.completed
-    return end_dict
 
 def create_uncertainty_hist_dict():
     df = train.valid_df
@@ -581,6 +581,7 @@ def create_uncertainty_hist_dict():
     main_dict["correct"] = correct_dict
     main_dict["wrong"] = wrong_dict
     return main_dict
+
 
 def create_uncertainty_bar_dict():
     root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -603,6 +604,7 @@ def create_uncertainty_bar_dict():
     main_dict["aleatoric"] = aleatoric_dict
     return main_dict
 
+
 def create_f1_bar_dict():
     df = train.valid_df
     [l, b] = al.f1_per_class(df)
@@ -618,6 +620,7 @@ def create_f1_bar_dict():
     main_dict["score"] = s
     return main_dict
 
+
 def create_precision_bar_dict():
     df = train.valid_df
     [l, b] = al.precision_per_class(df)
@@ -631,12 +634,14 @@ def create_precision_bar_dict():
     main_dict["precision_class"] = f1_class_dict
     return main_dict
 
+
 def get_cm():
     df = train.valid_df
     img_path = al.conf_matrix(df)
     #loc_path = os.path.join('data', 'analysis')
     #img_name = os.path.join(loc_path, "confusion.png")
     return img_path
+
 
 def create_roc_dict():
     df = train.valid_df
@@ -656,33 +661,39 @@ def create_roc_dict():
     main_dict["roc_curve"] = roc_list
     return main_dict
 
+
 def get_stn(path):
-    path = al.stn_view(path,train.use_gpu)
+    path = al.stn_view(path, train.use_gpu)
     #path = os.path.join('data','analysis','stn.png')
     return path
 
+
 def get_gradcam(path):
-    path = al.gradcam(path,train.use_gpu)
+    path = al.gradcam(path, train.use_gpu)
     #path = os.path.join('data','analysis','gradcam.png')
     return path
 
+
 def get_gradcam_noise(path):
-    path = al.gradcam_noise(path,train.use_gpu)
+    path = al.gradcam_noise(path, train.use_gpu)
     #path = os.path.join('data','analysis','gradcam_n.png')
     return path
 
+
 def get_uc_scores(path):
-    epistemic, aleatoric = al.uncertainty_scores(path,train.use_gpu)
+    epistemic, aleatoric = al.uncertainty_scores(path, train.use_gpu)
     #epistemic, aleatoric = 0.92, 0.93
     uc_dict = {}
     uc_dict["epistemic"] = epistemic
     uc_dict["aleatoric"] = aleatoric
     return uc_dict
 
+
 def get_violin_plot():
     path = al.violinplot(train.hidden)
     #path = os.path.join('data','analysis','violinplot.png')
     return path
+
 
 def get_graphs_1():
     graph_dict = {}
@@ -694,11 +705,13 @@ def get_graphs_1():
     graph_dict["Precision"] = precision_bar
     return graph_dict
 
+
 def get_graphs_2():
     graph_dict = {}
     cm = get_cm()
     graph_dict["CM"] = cm
     return graph_dict
+
 
 def get_graphs_3():
     graph_dict = {}
@@ -708,13 +721,15 @@ def get_graphs_3():
     graph_dict["UC_Bar"] = uc_bar
     return graph_dict
 
+
 def apply_augs(path, angle, kdim, amount, mean, variance):
     root_dir = os.path.dirname(os.path.realpath(__file__))
     ext = os.path.splitext(path)[1]
     img_name = "original" + ext
     mod_img_name = "modified" + ext
     final_path = os.path.join(root_dir, '..', 'data', 'analysis', img_name)
-    final_mod_path = os.path.join(root_dir, '..', 'data', 'analysis', mod_img_name)
+    final_mod_path = os.path.join(
+        root_dir, '..', 'data', 'analysis', mod_img_name)
     if os.path.exists(final_path):
         os.remove(final_path)
     if os.path.exists(final_mod_path):
@@ -730,6 +745,7 @@ def apply_augs(path, angle, kdim, amount, mean, variance):
     req_mod_path = os.path.join('data', 'analysis', mod_img_name)
     return req_org_path, req_mod_path
 
+
 def get_analysis_info(data):
     req_dict = json.loads(data)
     img_path = req_dict["img_path"]
@@ -739,7 +755,8 @@ def get_analysis_info(data):
     mean = req_dict["noise"]["mean"]
     variance = req_dict["noise"]["variance"]
     final_dict = {}
-    org_path, mod_path = apply_augs(img_path, angle, k_dim, amount, mean, variance)
+    org_path, mod_path = apply_augs(
+        img_path, angle, k_dim, amount, mean, variance)
     stn_path = get_stn(mod_path)
     gradcam_path = get_gradcam(mod_path)
     gradcam_noise_path = get_gradcam_noise(mod_path)
@@ -751,16 +768,20 @@ def get_analysis_info(data):
     final_dict["gradcam_noise"] = gradcam_noise_path
     final_dict["uc_scores"] = uc_scores
     root_dir = os.path.dirname(os.path.realpath(__file__))
-    json_path = os.path.join(root_dir, '..', 'data', 'analysis', 'analysis.json')
+    json_path = os.path.join(root_dir, '..', 'data',
+                             'analysis', 'analysis.json')
     if os.path.exists(json_path):
         os.remove(json_path)
     with open(json_path, 'w') as json_file:
         json.dump(final_dict, json_file)
 
+
 def get_graphs_4():
     root_dir = os.path.dirname(os.path.realpath(__file__))
-    json_path = os.path.join(root_dir, '..', 'data', 'analysis', 'analysis.json')
+    json_path = os.path.join(root_dir, '..', 'data',
+                             'analysis', 'analysis.json')
     return json_path
+
 
 def get_graphs_5():
     graph_dict = {}
