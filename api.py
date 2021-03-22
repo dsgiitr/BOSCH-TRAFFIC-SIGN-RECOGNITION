@@ -207,5 +207,11 @@ def createFolder():
     resp = jsonify(success=True)
     return resp
 
+@cross_origin()
+@app.route("/GetDataStats/<timestamp>", methods=["GET"])
+def get_DataStats(timestamp):
+    json_dict = util.generate_data_stats()
+    return jsonify(json_dict)
+
 if __name__ == '__main__':
     app.run(debug=True)

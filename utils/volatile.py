@@ -767,3 +767,29 @@ def get_graphs_5():
     vp = get_violin_plot()
     graph_dict["VP"] = vp
     return graph_dict
+
+def generate_data_stats_dict(path):
+    data_dict = {}
+    labels = []
+    values = []
+    for _, classes, _ in os.walk(path):
+        for class_name in classes:
+            class_path = os.path.join(path, str(class_name))
+            labels.append(str(class_name))
+            for _, _, images in os.walk(class_path):
+                values.append(len(images))
+    data_dict["labels"] = labels
+    data_dict["values"] = values
+    return data_dict
+                    
+
+def generate_data_stats():
+    main_dict = {}
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    train_dir = os.path.join(root_dir, '..', 'data', 'split', 'train')
+    valid_dir = os.path.join(root_dir, '..', 'data', 'split', 'valid')
+    train_dict = generate_data_stats_dict(train_dir)
+    valid_dict = generate_data_stats_dict(valid_dir)
+    main_dict["train"] = train_dict
+    main_dict["valid"] = valid_dict
+    return main_dict
