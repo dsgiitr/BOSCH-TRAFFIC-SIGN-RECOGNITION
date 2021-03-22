@@ -680,7 +680,7 @@ def get_uc_scores(path):
     return uc_dict
 
 def get_violin_plot():
-    #path = al.violinplot()
+    #path = al.violinplot(train.hidden)
     path = os.path.join('data','analysis','violinplot.png')
     return path
 
@@ -711,7 +711,7 @@ def get_graphs_3():
 def apply_augs(path, angle, kdim, amount, mean, variance):
     root_dir = os.path.dirname(os.path.realpath(__file__))
     ext = os.path.splitext(path)[1]
-    img_name = "original" + ext 
+    img_name = "original" + ext
     mod_img_name = "modified" + ext
     final_path = os.path.join(root_dir, '..', 'data', 'analysis', img_name)
     final_mod_path = os.path.join(root_dir, '..', 'data', 'analysis', mod_img_name)
@@ -767,7 +767,3 @@ def get_graphs_5():
     vp = get_violin_plot()
     graph_dict["VP"] = vp
     return graph_dict
-
-
-
-
