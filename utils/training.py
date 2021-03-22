@@ -22,6 +22,7 @@ path = os.getcwd()
 folder = 'tensorboard'
 writer = SummaryWriter(folder)
 completed = "false"
+n_classes = 0
 
 
 def trainlog(name, epoch, correct, loss):
@@ -47,7 +48,7 @@ def calc_gradient_penalty(x, y_pred_sum):
     return gradient_penalty
 
 # model should have model.datain, model.update_embeddings
-def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
+def train(model,n_classes, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
 
   learning_rate = lr
   momentum = 0.1
@@ -77,7 +78,7 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
       output = model(data)
       pred = output.data.argmax(1).long()
       datain = model.datain
-      loss = 10*F.binary_cross_entropy(output, F.one_hot(target,43).float()) + lm*calc_gradient_penalty(datain,output.sum(1))
+      loss = 10*F.binary_cross_entropy(output, F.one_hot(target,n_classes).float()) + lm*calc_gradient_penalty(datain,output.sum(1))
       correct = pred.eq(target.data.view_as(pred)).sum().item()
       loss.backward()
       optimizer.step()
@@ -87,7 +88,7 @@ def train(model, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
 
       with torch.no_grad():
         model.eval()
-        model.update_embeddings(data,F.one_hot(target.long(),43).float())
+        model.update_embeddings(data,F.one_hot(target.long(),n_classes).float())
 
       if batch_idx % log_interval == 0:
         trainlog('batch',batch_idx,100.*correct/len(data),loss.item())
@@ -239,14 +240,15 @@ def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,cent
     tensorboard_proc = subprocess.Popen(["tensorboard","--reload_interval","15", "--logdir",folder])
     current_app.logger.info("tensorflow launched \n")
 
+    global model, writer, use_gpu, n_classes
+
     root_dir = os.path.dirname(os.path.realpath(__file__))
     train_path = os.path.join(root_dir, '..', 'data', 'split', 'train')
     valid_path = os.path.join(root_dir, '..', 'data', 'split', 'valid')
+    n_classes = len(dl.find_classes(train_path)[0])
     train_loader = dl.create_loader(train_path, batch_size=batch_size, shuffle=True,  sz = img_size)
     valid_loader = dl.create_loader(valid_path, batch_size=batch_size, shuffle=False, sz = img_size)
-    n_classes = len(dl.find_classes(train_path)[0])
-
-    global model, writer, use_gpu
+    
     model = makemodel(layers, n_classes, centroid_size)
     current_app.logger.info("model is made \n")
 
@@ -257,7 +259,7 @@ def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,cent
     if use_gpu:
         model.cuda()
     current_app.logger.info("about to start training \n")
-    train(model,train_loader,valid_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
+    train(model, n_classes,train_loader,valid_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
     validation(model,valid_loader,use_gpu)
     global completed
     completed = "true"
@@ -342,9 +344,9 @@ def makemodel(layers, n_classes, embedding_size):
 
         # Regressor for the 3 * 2 affine matrix
         self.fc_loc = nn.Sequential(
-            nn.Linear(10 * 6 * 6, sz),
+            nn.Linear(10 * 6 * 6, img_size),
             nn.ReLU(True),
-            nn.Linear(sz, 3 * 2),
+            nn.Linear(img_size, 3 * 2),
             )
 
         # Initialize the weights/bias with identity transformation

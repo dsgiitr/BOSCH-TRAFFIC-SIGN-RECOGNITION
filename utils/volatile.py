@@ -565,12 +565,12 @@ def check_exit_signal():
     return end_dict
 
 def create_uncertainty_hist_dict():
-    #df = train.valid_df
-    #[h_1, l_1, h_2, l_2] = al.uncertainty_hist(df)
-    h_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
-    l_1 = [1,3,5,7,9,11,13,15]
-    h_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
-    l_2 = [2,4,6,8,10,12,14,16]
+    df = train.valid_df
+    [h_1, l_1, h_2, l_2] = al.uncertainty_hist(df)
+    #h_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    #l_1 = [1,3,5,7,9,11,13,15]
+    #h_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    #l_2 = [2,4,6,8,10,12,14,16]
     correct_dict = {}
     correct_dict["labels"] = l_1
     correct_dict["data"] = h_1
@@ -583,15 +583,15 @@ def create_uncertainty_hist_dict():
     return main_dict
 
 def create_uncertainty_bar_dict():
-    #root_dir = os.path.dirname(os.path.realpath(__file__))
-    #loc_path = os.path.join(root_dir, '..', 'data', 'modified')
-    #n_classes = len(dlr.find_classes(loc_path)[0])
-    #df = train.valid_df
-    #[b_1, l_1, b_2, l_2] = al.uncertainty_bar(n_classes, df)
-    b_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
-    l_1 = [1,2,3,4,5,6,7,8]
-    b_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
-    l_2 = [1,2,3,4,5,6,7,8]
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    loc_path = os.path.join(root_dir, '..', 'data', 'modified')
+    n_classes = train.n_classes
+    df = train.valid_df
+    [b_1, l_1, b_2, l_2] = al.uncertainty_bar(n_classes, df)
+    #b_1 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    #l_1 = [1,2,3,4,5,6,7,8]
+    #b_2 = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    #l_2 = [1,2,3,4,5,6,7,8]
     epistemic_dict = {}
     epistemic_dict["labels"] = l_1
     epistemic_dict["data"] = b_1
@@ -604,12 +604,12 @@ def create_uncertainty_bar_dict():
     return main_dict
 
 def create_f1_bar_dict():
-    #df = train.valid_df
-    #[l, b] = al.f1_per_class(df)
-    #s = al.f1_total(df)
-    b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
-    l = [1,2,3,4,5,6,7,8]
-    s = 0.99
+    df = train.valid_df
+    [l, b] = al.f1_per_class(df)
+    s = al.f1_total(df)
+    #b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    #l = [1,2,3,4,5,6,7,8]
+    #s = 0.99
     f1_class_dict = {}
     f1_class_dict["labels"] = l
     f1_class_dict["data"] = b
@@ -619,11 +619,11 @@ def create_f1_bar_dict():
     return main_dict
 
 def create_precision_bar_dict():
-    #df = train.valid_df
-    #[l, b] = al.precision_per_class(df)
-    #s = al.f1_total(df)
-    b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
-    l = [1,2,3,4,5,6,7,8]
+    df = train.valid_df
+    [l, b] = al.precision_per_class(df)
+    s = al.f1_total(df)
+    #b = [0.4,0.3,0.2,0.4,0.4,0.3,0.1,0.8]
+    #l = [1,2,3,4,5,6,7,8]
     f1_class_dict = {}
     f1_class_dict["labels"] = l
     f1_class_dict["data"] = b
@@ -632,17 +632,17 @@ def create_precision_bar_dict():
     return main_dict
 
 def get_cm():
-    #df = train.valid_df
-    #img_path = al.conf_matrix(df)
+    df = train.valid_df
+    img_path = al.conf_matrix(df)
     loc_path = os.path.join('data', 'analysis')
     img_name = os.path.join(loc_path, "confusion.png")
     return img_name
 
 def create_roc_dict():
-    #df = train.valid_df
-    #logit = train.v_logit
-    #fpr, tpr = al.roc(df, logit)
-    fpr, tpr = [ [0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3] ], [ [0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6] ]
+    df = train.valid_df
+    logit = train.v_logit
+    fpr, tpr = al.roc(df, logit)
+    #fpr, tpr = [ [0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3],[0.1,0.2,0.3] ], [ [0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6],[0.1,0.2,0.3],[0.2,0.4,0.6] ]
     roc_list = []
     for i in range(len(fpr)):
         roc_class_list = []
@@ -657,22 +657,22 @@ def create_roc_dict():
     return main_dict
 
 def get_stn(path):
-    #path = al.stn_view(path)
+    #path = al.stn_view(path,train.use_gpu)
     path = os.path.join('data','analysis','stn.png')
     return path
 
 def get_gradcam(path):
-    #path = al.gradcam(path)
+    #path = al.gradcam(path,train.use_gpu)
     path = os.path.join('data','analysis','gradcam.png')
     return path
 
 def get_gradcam_noise(path):
-    #path = al.gradcam_noise(path)
+    #path = al.gradcam_noise(path,train.use_gpu)
     path = os.path.join('data','analysis','gradcam_n.png')
     return path
 
 def get_uc_scores(path):
-    #epistemic, aleatoric = al.uncertainty_scores(path)
+    #epistemic, aleatoric = al.uncertainty_scores(path,train.use_gpu)
     epistemic, aleatoric = 0.92, 0.93
     uc_dict = {}
     uc_dict["epistemic"] = epistemic

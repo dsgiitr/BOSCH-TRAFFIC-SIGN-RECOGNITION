@@ -1,0 +1,9 @@
+flask
+opencv-python
+numpy
+pandas
+torch
+torchvision
+PyWavelets
+tensorboard
+sklearn

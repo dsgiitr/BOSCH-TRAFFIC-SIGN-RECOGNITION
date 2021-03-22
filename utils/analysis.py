@@ -60,8 +60,14 @@ def uncertainty_bar(n_classes, df):
     epistemic[target[i]].append(conf[i])
     aleatoric[target[i]].append(sig[i])
   for i in range(n_classes):
-    epistemic[i] = np.array(epistemic[i]).mean().item()
-    aleatoric[i] = np.array(aleatoric[i]).mean().item()
+    if len(epistemic[i]):
+        epistemic[i] = np.array(epistemic[i]).mean().item()
+    else:
+        epistemic[i]=0
+    if len(aleatoric[i]):
+        aleatoric[i] = np.array(aleatoric[i]).mean().item()
+    else:
+        epistemic[i]=0
 
   return [epistemic, np.arange(n_classes).tolist(), aleatoric, np.arange(n_classes).tolist()]
 
@@ -138,7 +144,9 @@ def roc(df1, logit):
   fpr = np.empty((n_classes, 0)).tolist()
   tpr = np.empty((n_classes, 0)).tolist()
   for i in range(n_classes):
-    fpr[i], tpr[i], _ = roc_curve(y[:, i], logit[:, i]).tolist()
+    fpr[i], tpr[i], _ = roc_curve(y[:, i], logit[:, i])
+    fpr[i] = fpr[i].tolist()
+    tpr[i] = tpr[i].tolist()
   return fpr, tpr
 
 
