@@ -2,9 +2,10 @@
 
 ![alt text](photos/front.gif)
 
-With the advancements in AI and the development of computing capabilities in the 21st century, millions ofprocesses around the globe are being automated like never before. The automobile industry is transforming,and the day isn't far when fully autonomous vehicles would make transportation extremely inexpensive andeffective. But to reach this ambitious goal, which aims to change the very foundations of transportation as anindustry, we need to first solve a few challenging problems which will help a vehicle make decisions by itself.
+With the advancements in AI and the development of computing capabilities in the 21st century, millions of processes around the globe are being automated like never before. The automobile industry is transforming,and the day isn't far when fully autonomous vehicles would make transportation extremely inexpensive andeffective. But to reach this ambitious goal, which aims to change the very foundations of transportation as anindustry, we need to first solve a few challenging problems which will help a vehicle make decisions by itself.
 This is one such problem and solving it would take us one step closer to L5 autonomy.
 
+The developed software package **“Analysis.ai”** is designed to help an analyst to build datasets for traffic sign recognition, implement wide variety of augmentation and transformation techniques on the dataset with wide flexibility. Furthermore, the package provides user with a latest deep learning model E-DUQ clubbed with an Spatial Transformer Network (STN) to not only make a prediction but also give information regarding noise and confidence level of the prediction. The detailed analysis of the trained model has been done using uncertainty, architecture and augmentative analysis. 
 
 ## DataSet Description
 
