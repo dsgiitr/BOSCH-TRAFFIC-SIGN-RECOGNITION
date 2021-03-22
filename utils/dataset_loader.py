@@ -4,8 +4,6 @@ import torch.utils.data as data
 from torchvision.datasets.folder import default_loader, make_dataset
 import os
 
-n_classes = 43
-
 def find_classes(dir):
     classes = os.listdir(dir)
     classes.sort()
