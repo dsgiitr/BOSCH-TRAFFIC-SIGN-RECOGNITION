@@ -634,9 +634,9 @@ def create_precision_bar_dict():
 def get_cm():
     df = train.valid_df
     img_path = al.conf_matrix(df)
-    loc_path = os.path.join('data', 'analysis')
-    img_name = os.path.join(loc_path, "confusion.png")
-    return img_name
+    #loc_path = os.path.join('data', 'analysis')
+    #img_name = os.path.join(loc_path, "confusion.png")
+    return img_path
 
 def create_roc_dict():
     df = train.valid_df
@@ -657,31 +657,31 @@ def create_roc_dict():
     return main_dict
 
 def get_stn(path):
-    #path = al.stn_view(path,train.use_gpu)
-    path = os.path.join('data','analysis','stn.png')
+    path = al.stn_view(path,train.use_gpu)
+    #path = os.path.join('data','analysis','stn.png')
     return path
 
 def get_gradcam(path):
-    #path = al.gradcam(path,train.use_gpu)
-    path = os.path.join('data','analysis','gradcam.png')
+    path = al.gradcam(path,train.use_gpu)
+    #path = os.path.join('data','analysis','gradcam.png')
     return path
 
 def get_gradcam_noise(path):
-    #path = al.gradcam_noise(path,train.use_gpu)
-    path = os.path.join('data','analysis','gradcam_n.png')
+    path = al.gradcam_noise(path,train.use_gpu)
+    #path = os.path.join('data','analysis','gradcam_n.png')
     return path
 
 def get_uc_scores(path):
-    #epistemic, aleatoric = al.uncertainty_scores(path,train.use_gpu)
-    epistemic, aleatoric = 0.92, 0.93
+    epistemic, aleatoric = al.uncertainty_scores(path,train.use_gpu)
+    #epistemic, aleatoric = 0.92, 0.93
     uc_dict = {}
     uc_dict["epistemic"] = epistemic
     uc_dict["aleatoric"] = aleatoric
     return uc_dict
 
 def get_violin_plot():
-    #path = al.violinplot(train.hidden)
-    path = os.path.join('data','analysis','violinplot.png')
+    path = al.violinplot(train.hidden)
+    #path = os.path.join('data','analysis','violinplot.png')
     return path
 
 def get_graphs_1():

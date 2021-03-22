@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
 import os
+from datetime import datetime
 from sklearn.metrics import confusion_matrix, f1_score, roc_curve, precision_score, accuracy_score
 from sklearn.preprocessing import label_binarize
 from torchvision import transforms
@@ -14,6 +15,7 @@ import torch.nn as nn
 import utils.training as tr
 
 img_size = 40
+root_dir = os.path.dirname(os.path.realpath(__file__))
 test_transform = transforms.Compose([
     transforms.Resize((img_size,img_size)),
     transforms.ToTensor()
@@ -23,7 +25,7 @@ def norm(a):
   a/=a.max()
   return a
 def mid(s):
-  return [(s[i]+s[i+1])/2 for i in range(0, len(s)-1, 1)]
+  return [round((s[i]+s[i+1])/2,2) for i in range(0, len(s)-1, 1)]
 
 #######################################################################################
 ## All functions have output as list and require tr.model
@@ -41,15 +43,14 @@ def uncertainty_hist(df):
     else:
       kernel_distance_wrong.append(conf[i])
   plt.ion()
-  normal_,normal_l,_ = plt.hist(kernel_distance_normal,bins = "auto",color=['#22FF22'])
-  wrong_,wrong_l,_ = plt.hist(kernel_distance_wrong,bins = "auto",color=['#22FF22'])
+  normal_,normal_l,_ = plt.hist(kernel_distance_normal,bins = 20,color=['#22FF22'])
+  wrong_,wrong_l,_ = plt.hist(kernel_distance_wrong,bins = 20,color=['#22FF22'])
   plt.close()
   return [normal_.tolist(),mid(normal_l.tolist()), wrong_.tolist(),mid(wrong_l.tolist())]
 
 
 # per class scores
 def uncertainty_bar(n_classes, df):
-
   target = df['label'].to_numpy().astype(np.int).tolist()
   conf = df['confidence'].to_numpy().astype(np.float).tolist()
   sig = df['sigma'].to_numpy().astype(np.float).tolist()
@@ -61,11 +62,11 @@ def uncertainty_bar(n_classes, df):
     aleatoric[target[i]].append(sig[i])
   for i in range(n_classes):
     if len(epistemic[i]):
-        epistemic[i] = np.array(epistemic[i]).mean().item()
+        epistemic[i] = round(np.array(epistemic[i]).mean().item(),3)
     else:
         epistemic[i]=0
     if len(aleatoric[i]):
-        aleatoric[i] = np.array(aleatoric[i]).mean().item()
+        aleatoric[i] = round(np.array(aleatoric[i]).mean().item(),3)
     else:
         epistemic[i]=0
 
@@ -82,7 +83,7 @@ def uncertainty_scores(path, usecuda = True):
       img = img.cuda()
     img = img.unsqueeze(0)
     output = tr.model(img).squeeze().cpu()
-    epistemic, aleatoric = output.max(0)[0].mean().item(), abs(tr.model.sigma.squeeze().item())
+    epistemic, aleatoric = round(output.max(0)[0].mean().item(),4), round(abs(tr.model.sigma.squeeze().item()),4)
     return epistemic, aleatoric
 
 
@@ -92,7 +93,7 @@ def conf_matrix(df):
   mat = confusion_matrix(data[:, 0], data[:, 1])
   m = len(mat)
   vis = np.zeros((m, m), dtype='O')
-
+  #mat = np.random.rand(10,10)
   """for i in range(m):
     for j in range(m):
       vis[i, j] = [mat[i, j], []]
@@ -105,18 +106,23 @@ def conf_matrix(df):
   cm = mat
   cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
   cm = np.log(.0001 + cm)
+  now = datetime.now()
+  current = now.strftime("%H%M%S%f")
+
+  root_dir = os.path.dirname(os.path.realpath(__file__))
+  loc_path = os.path.join(root_dir,'..','data', 'analysis')
   plt.ion()
-  loc_path = os.path.join('data', 'analysis')
   plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
   plt.title('Log of normalized Confusion Matrix')
   plt.ylabel('True label')
   plt.xlabel('Predicted label')
-  img_name = os.path.join(loc_path, "confusion.png")
+  newimg = "confusion_"+str(current)+".png"
+  img_name = os.path.join(loc_path,newimg )
   if os.path.exists(img_name):
       os.remove(img_name)
   plt.savefig(img_name)
   plt.close()
-  return img_name
+  return os.path.join('data', 'analysis', newimg)
 
 
 def f1_per_class(df):
@@ -159,12 +165,18 @@ def stn_view(path, usecuda = True):
         img = img.cuda()
       img = img.unsqueeze(0)
       output = tr.model.stn(img).squeeze().cpu()
-      loc_path = os.path.join('data', 'analysis')
-      img_name = os.path.join(loc_path, "stn.png")
+
+      now = datetime.now()
+      current = now.strftime("%H%M%S%f")
+
+      loc_path = os.path.join(root_dir,'..','data', 'analysis')
+      newimg = "stn_"+str(current)+".png"
+      img_name = os.path.join(loc_path, newimg)
+
       if os.path.exists(img_name):
         os.remove(img_name)
       save_image(output,img_name)
-      return img_name
+      return os.path.join('data', 'analysis',newimg)
 
 
 def gradcam(path, usecuda = True):
@@ -196,12 +208,18 @@ def gradcam(path, usecuda = True):
       superimpose = (img + st*map)
       superimpose /= superimpose.max()
       superimpose = superimpose.permute(2,0,1)
-      img_name = os.path.join(loc_path, "gradcam.png")
+
+      now = datetime.now()
+      current = now.strftime("%H%M%S%f")
+      loc_path = os.path.join(root_dir,'..','data', 'analysis')
+      newimg = "gradcam_"+str(current)+".png"
+      img_name = os.path.join(loc_path, newimg)
+
       if os.path.exists(img_name):
         os.remove(img_name)
       save_image(superimpose,img_name)
   tr.model.cam = False
-  return img_name
+  return os.path.join('data', 'analysis',newimg)
 
 
 def gradcam_noise(path, usecuda = True):
@@ -233,12 +251,17 @@ def gradcam_noise(path, usecuda = True):
       superimpose = (img + st*map)
       superimpose /= superimpose.max()
       superimpose = superimpose.permute(2,0,1)
-      img_name = os.path.join(loc_path, "gradcam_n.png")
+
+      now = datetime.now()
+      current = now.strftime("%H%M%S%f")
+      loc_path = os.path.join(root_dir,'..','data', 'analysis')
+      newimg = "gradcam_n"+str(current)+".png"
+      img_name = os.path.join(loc_path, newimg)
       if os.path.exists(img_name):
         os.remove(img_name)
       save_image(superimpose,img_name)
   tr.model.cam = False
-  return img_name
+  return os.path.join('data', 'analysis',newimg)
 
 # Plots for weight viisualizations
 def violinplot(hidden):
@@ -284,10 +307,13 @@ def violinplot(hidden):
   plt.subplot(2,1,2)
   violinplots(b,'Violin plot of Conv Biases')
 
-  loc_path = os.path.join('data', 'analysis')
-  img_name = os.path.join(loc_path, "violinplot.png")
+  now = datetime.now()
+  current = now.strftime("%H%M%S%f")
+  loc_path = os.path.join(root_dir,'..','data', 'analysis')
+  newimg = "violin_"+str(current)+".png"
+  img_name = os.path.join(loc_path, newimg)
   if os.path.exists(img_name):
     os.remove(img_name)
   plt.savefig(img_name)
   plt.close()
-  return img_name
+  return os.path.join('data', 'analysis',newimg)
