@@ -3,6 +3,7 @@ from flask_cors import CORS, cross_origin
 import json
 import utils.volatile as util
 from logging.config import dictConfig
+import os
 
 dictConfig({
     'version': 1,
@@ -186,6 +187,25 @@ def sendData4():
 def get_Graphs5(timestamp):
     json_dict = util.get_graphs_5()
     return jsonify(json_dict)
+
+@cross_origin()
+@app.route("/sendfile", methods=["POST"])
+def sendfile():
+    print(request.form, request.files['file'])
+    image = request.files['file']
+    path = request.form.get('path')
+    image.save(path)
+    resp = jsonify(success=True)
+    return resp
+
+@cross_origin()
+@app.route("/newfolder", methods=["POST"])
+def createFolder():
+    print(request.form)
+    path = request.form.get('path')
+    os.mkdir(path)
+    resp = jsonify(success=True)
+    return resp
 
 if __name__ == '__main__':
     app.run(debug=True)
