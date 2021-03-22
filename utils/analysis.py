@@ -14,9 +14,9 @@ import torch.nn.functional as F
 import torch.nn as nn
 import utils.training as tr
 
-sz = 40
+img_size = 40
 test_transform = transforms.Compose([
-    transforms.Resize((sz,sz)),
+    transforms.Resize((img_size,img_size)),
     transforms.ToTensor()
 ])
 def norm(a):
@@ -233,7 +233,7 @@ def gradcam_noise(path, usecuda = True):
   return img_name
 
 
-def violinplot():
+def violinplot(hidden):
   i=0
   w = [];b = []
   tr.model.eval()
@@ -243,7 +243,7 @@ def violinplot():
           b.append(m.bias.data.reshape(-1).cpu().detach().numpy()[0:32])
           i=i+1
           #print(m)
-      if i==7:
+      if i==7+hidden:
           break
   def adjacent_values(vals, q1, q3):
         upper_adjacent_value = q3 + (q3 - q1) * 1.5
