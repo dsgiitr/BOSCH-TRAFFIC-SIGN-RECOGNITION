@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import utils.dataset_loader as dl
 from flask import current_app
-import subprocess 
+import subprocess
 valid_df = []
 v_logit = []
 model = []
@@ -358,6 +358,7 @@ def makemodel(layers, n_classes, embedding_size):
         x = self.stn(x)
         x = self.conv1(x)
         x = self.conv2(x)
+        x = self.conv25(x)
         return x
 
     # Spatial transformer network forward function
