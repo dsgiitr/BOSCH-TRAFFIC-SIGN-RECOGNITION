@@ -144,16 +144,8 @@ def start_train():
 @ cross_origin()
 @ app.route("/GetLink/<timestamp>", methods=["GET"])
 def get_tb_link(timestamp):
-    json_dict = util.get_tensorboard()
+    json_dict = util.get_tensorboard_link()
     return jsonify(json_dict)
-
-
-@ cross_origin()
-@ app.route("/CheckExit/<timestamp>", methods=["GET"])
-def check_exit(timestamp):
-    json_dict = util.check_exit_signal()
-    return jsonify(json_dict)
-
 
 
 @cross_origin()
@@ -162,17 +154,20 @@ def get_Graphs1(timestamp):
     json_dict = util.get_graphs_1()
     return jsonify(json_dict)
 
+
 @cross_origin()
 @app.route("/GetGraphs2/<timestamp>", methods=["GET"])
 def get_Graphs2(timestamp):
     json_dict = util.get_graphs_2()
     return jsonify(json_dict)
 
+
 @cross_origin()
 @app.route("/GetGraphs3/<timestamp>", methods=["GET"])
 def get_Graphs3(timestamp):
     json_dict = util.get_graphs_3()
     return jsonify(json_dict)
+
 
 @cross_origin()
 @app.route("/SendData4", methods=["POST"])
@@ -182,11 +177,13 @@ def sendData4():
     json_file = util.get_graphs_4()
     return send_file(json_file)
 
+
 @cross_origin()
 @app.route("/GetGraphs5/<timestamp>", methods=["GET"])
 def get_Graphs5(timestamp):
     json_dict = util.get_graphs_5()
     return jsonify(json_dict)
+
 
 @cross_origin()
 @app.route("/sendfile", methods=["POST"])
@@ -198,6 +195,7 @@ def sendfile():
     resp = jsonify(success=True)
     return resp
 
+
 @cross_origin()
 @app.route("/newfolder", methods=["POST"])
 def createFolder():
@@ -206,6 +204,7 @@ def createFolder():
     os.mkdir(path)
     resp = jsonify(success=True)
     return resp
+
 
 if __name__ == '__main__':
     app.run(debug=True)
