@@ -804,6 +804,7 @@ def generate_data_stats_dict(path):
     values = []
     for _, classes, _ in os.walk(path):
         for class_name in classes:
+            classes.sort()
             class_path = os.path.join(path, str(class_name))
             labels.append(str(class_name))
             for _, _, images in os.walk(class_path):
