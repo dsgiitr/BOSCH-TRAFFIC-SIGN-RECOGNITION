@@ -1,6 +1,8 @@
 import torch
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
@@ -45,7 +47,8 @@ def uncertainty_hist(df):
   plt.ion()
   normal_,normal_l,_ = plt.hist(kernel_distance_normal,bins = 20,color=['#22FF22'])
   wrong_,wrong_l,_ = plt.hist(kernel_distance_wrong,bins = 20,color=['#22FF22'])
-  plt.close()
+  plt.close('all')
+  plt.ioff()
   return [normal_.tolist(),mid(normal_l.tolist()), wrong_.tolist(),mid(wrong_l.tolist())]
 
 
@@ -121,7 +124,8 @@ def conf_matrix(df):
   if os.path.exists(img_name):
       os.remove(img_name)
   plt.savefig(img_name)
-  plt.close()
+  plt.close('all')
+  plt.ioff()
   return os.path.join('data', 'analysis', newimg)
 
 
@@ -255,7 +259,7 @@ def gradcam_noise(path, usecuda = True):
       now = datetime.now()
       current = now.strftime("%H%M%S%f")
       loc_path = os.path.join(root_dir,'..','data', 'analysis')
-      newimg = "gradcam_n"+str(current)+".png"
+      newimg = "gradcam_n_"+str(current)+".png"
       img_name = os.path.join(loc_path, newimg)
       if os.path.exists(img_name):
         os.remove(img_name)
@@ -315,5 +319,6 @@ def violinplot(hidden):
   if os.path.exists(img_name):
     os.remove(img_name)
   plt.savefig(img_name)
-  plt.close()
+  plt.close('all')
+  plt.ioff()
   return os.path.join('data', 'analysis',newimg)

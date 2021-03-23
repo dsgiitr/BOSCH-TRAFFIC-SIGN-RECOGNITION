@@ -43,16 +43,19 @@ def save_modified(image_df, modified_loc):
         if not os.path.exists(dir_path):
             os.mkdir(dir_path)
         rows = image_df.loc[image_df["Class Name"] == str(class_name)]
-        paths = rows["Path"].values.tolist()
-        class_names = rows["Class Name"].values.tolist()
-        img_names = rows["Image Name"].values.tolist()
-        ext = rows["Extension"].values.tolist()
-        for i in range(len(paths)):
-            org_loc = paths[i]
-            file_name = str(img_names[i]) + "." + ext[i]
-            new_loc = os.path.join(
-                modified_loc, str(class_names[i]), file_name)
-            shutil.copy2(org_loc, new_loc)
+        if len(rows["Image Name"].values.tolist()) == 0:
+            os.remove(dir_path)
+        else:
+            paths = rows["Path"].values.tolist()
+            class_names = rows["Class Name"].values.tolist()
+            img_names = rows["Image Name"].values.tolist()
+            ext = rows["Extension"].values.tolist()
+            for i in range(len(paths)):
+                org_loc = paths[i]
+                file_name = str(img_names[i]) + "." + ext[i]
+                new_loc = os.path.join(
+                    modified_loc, str(class_names[i]), file_name)
+                shutil.copy2(org_loc, new_loc)
 
 
 def select_function(name, limit_class):
@@ -214,9 +217,7 @@ def create_train_valid_json():
     return out_path
 
 
-def select_random_batch(root_dir, file_dir, select_fraction, folder):
-    mod_dir = os.path.join(root_dir, '..', 'data', 'batch')
-    create_dir(mod_dir)
+def select_random_batch(mod_dir, file_dir, select_fraction, folder):
     final_dir = os.path.join(mod_dir, folder)
     create_dir(final_dir)
     for _, classes, _ in os.walk(file_dir):
@@ -242,16 +243,22 @@ def create_random_batch(folder, percent):
     split_valid_loc = os.path.join(loc_path, "..", "data", "split", "valid")
     fraction = percent/100
     if folder == "train":
+        mod_dir = os.path.join(loc_path, '..', 'data', 'batch')
+        create_dir(mod_dir)
         file_dir = split_train_loc
-        select_random_batch(loc_path, file_dir, fraction, folder)
+        select_random_batch(mod_dir, file_dir, fraction, folder)
     elif folder == "valid":
+        mod_dir = os.path.join(loc_path, '..', 'data', 'batch')
+        create_dir(mod_dir)
         file_dir = split_valid_loc
-        select_random_batch(loc_path, file_dir, fraction, folder)
+        select_random_batch(mod_dir, file_dir, fraction, folder)
     elif folder == "complete":
+        mod_dir = os.path.join(loc_path, '..', 'data', 'batch')
+        create_dir(mod_dir)
         file_dir_1 = split_train_loc
         file_dir_2 = split_valid_loc
-        select_random_batch(loc_path, file_dir_1, fraction, "train")
-        select_random_batch(loc_path, file_dir_2, fraction, "valid")
+        select_random_batch(mod_dir, file_dir_1, fraction, "train")
+        select_random_batch(mod_dir, file_dir_2, fraction, "valid")
     create_image_folders()
 
 
@@ -725,8 +732,10 @@ def get_graphs_3():
 def apply_augs(path, angle, kdim, amount, mean, variance):
     root_dir = os.path.dirname(os.path.realpath(__file__))
     ext = os.path.splitext(path)[1]
-    img_name = "original" + ext
-    mod_img_name = "modified" + ext
+    now = datetime.now()
+    current = now.strftime("%H%M%S%f")
+    img_name = "original_" + str(current) + ext
+    mod_img_name = "modified_" + str(current) + ext
     final_path = os.path.join(root_dir, '..', 'data', 'analysis', img_name)
     final_mod_path = os.path.join(
         root_dir, '..', 'data', 'analysis', mod_img_name)
@@ -739,7 +748,7 @@ def apply_augs(path, angle, kdim, amount, mean, variance):
     img_rotate = ag.rotate(img, angle=angle)
     img_blur = ag.average_blur(img_rotate, kdim=kdim)
     img_sharpen = ag.sharpen(img_blur, amount=amount)
-    img_noise = ag.gaussian_noise(img_sharpen, var=variance, mean=mean)
+    img_noise = ag.gaussian_noise(img_sharpen, var=float(variance), mean=float(mean))
     cv2.imwrite(final_mod_path, img_noise)
     req_org_path = os.path.join('data', 'analysis', img_name)
     req_mod_path = os.path.join('data', 'analysis', mod_img_name)
