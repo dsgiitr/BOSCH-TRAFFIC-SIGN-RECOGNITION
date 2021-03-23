@@ -77,7 +77,8 @@ def uncertainty_bar(n_classes, df):
 
 
 # per image score
-def uncertainty_scores(path, usecuda = True):
+def uncertainty_scores(path):
+  usecuda = False
   with torch.no_grad():
     tr.model.eval()
     img = Image.open(path)
@@ -160,7 +161,8 @@ def roc(df1, logit):
   return fpr, tpr
 
 
-def stn_view(path, usecuda = True):
+def stn_view(path):
+    usecuda = False
     with torch.no_grad():
       tr.model.eval()
       img = Image.open(path)
@@ -183,7 +185,8 @@ def stn_view(path, usecuda = True):
       return os.path.join('data', 'analysis',newimg)
 
 
-def gradcam(path, usecuda = True):
+def gradcam(path):
+  usecuda = False
   tr.model.cam = True
   st = 0.7
   tr.model.eval()
@@ -226,7 +229,8 @@ def gradcam(path, usecuda = True):
   return os.path.join('data', 'analysis',newimg)
 
 
-def gradcam_noise(path, usecuda = True):
+def gradcam_noise(path):
+  usecuda = False
   tr.model.cam = True
   st = 0.7
   tr.model.eval()

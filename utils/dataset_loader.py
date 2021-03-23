@@ -13,7 +13,7 @@ def find_classes(dir):
 class ImageFolder():
     def __init__(self, root, transform=None, target_transform=None, loader = default_loader):
         classes, class_to_idx = find_classes(root)
-        imgs = make_dataset(root, class_to_idx, ("jpg","ppm"))
+        imgs = make_dataset(root, class_to_idx, ("jpg","ppm",'png'))
         if len(imgs) == 0:
             raise(RuntimeError("Not found"))
         self.root = root
@@ -51,8 +51,8 @@ def create_loader(path,batch_size=64,shuffle=True,cudav=False,transform=None,sz=
     if split!=0:
         num = int(split*len(ds))
         train_ds, val_ds = torch.utils.data.random_split(ds, [len(ds)-num,num])
-        train_loader = torch.utils.data.DataLoader(ds,batch_size=batch_size, shuffle=shuffle)
-        val_loader = torch.utils.data.DataLoader(ds,batch_size=batch_size, shuffle=shuffle)
+        train_loader = torch.utils.data.DataLoader(ds,batch_size=batch_size, shuffle=shuffle,pin_memory=False)
+        val_loader = torch.utils.data.DataLoader(ds,batch_size=batch_size, shuffle=shuffle,pin_memory=False)
         return train_loader, val_loader
-    loader = torch.utils.data.DataLoader(ds,batch_size=batch_size, shuffle=shuffle)
+    loader = torch.utils.data.DataLoader(ds,batch_size=batch_size, shuffle=shuffle,pin_memory=False)
     return loader
