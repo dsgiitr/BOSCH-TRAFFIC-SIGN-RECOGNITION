@@ -551,6 +551,17 @@ def get_layers(layers):
 
 
 def start_training(data):
+    loc_path = os.path.dirname(os.path.realpath(__file__))
+    folder = os.path.join(loc_path,'..','tensorboard')
+    for filename in os.listdir(folder):
+      file_path = os.path.join(folder, filename)
+      try:
+          if os.path.isfile(file_path) or os.path.islink(file_path):
+              os.unlink(file_path)
+          elif os.path.isdir(file_path):
+              shutil.rmtree(file_path)
+      except Exception as e:
+          print('Failed to delete %s. Reason: %s' % (file_path, e))
     main_dict = data
     optimizer = main_dict["optimizer"]
     epochs = int(main_dict["epochs"])
@@ -670,25 +681,25 @@ def create_roc_dict():
 
 
 def get_stn(path):
-    path = al.stn_view(path, train.use_gpu)
+    path = al.stn_view(path)
     #path = os.path.join('data','analysis','stn.png')
     return path
 
 
 def get_gradcam(path):
-    path = al.gradcam(path, train.use_gpu)
+    path = al.gradcam(path)
     #path = os.path.join('data','analysis','gradcam.png')
     return path
 
 
 def get_gradcam_noise(path):
-    path = al.gradcam_noise(path, train.use_gpu)
+    path = al.gradcam_noise(path)
     #path = os.path.join('data','analysis','gradcam_n.png')
     return path
 
 
 def get_uc_scores(path):
-    epistemic, aleatoric = al.uncertainty_scores(path, train.use_gpu)
+    epistemic, aleatoric = al.uncertainty_scores(path)
     #epistemic, aleatoric = 0.92, 0.93
     uc_dict = {}
     uc_dict["epistemic"] = epistemic
@@ -812,7 +823,7 @@ def generate_data_stats_dict(path):
     data_dict["labels"] = labels
     data_dict["values"] = values
     return data_dict
-                    
+
 
 def generate_data_stats():
     main_dict = {}
