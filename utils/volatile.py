@@ -814,6 +814,7 @@ def generate_data_stats_dict(path):
     labels = []
     values = []
     for _, classes, _ in os.walk(path):
+        classes.sort(key = lambda x:int(x))
         for class_name in classes:
             classes.sort()
             class_path = os.path.join(path, str(class_name))

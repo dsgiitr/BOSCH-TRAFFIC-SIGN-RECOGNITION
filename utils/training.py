@@ -3,13 +3,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+import tensorboard
 from torch.utils.tensorboard import SummaryWriter
 import os, shutil
 import pandas as pd
 import numpy as np
+from datetime import datetime
 import utils.dataset_loader as dl
 from flask import current_app
 import subprocess
+
 valid_df = []
 v_logit = []
 model = []
@@ -21,7 +24,7 @@ hidden = 0
 path = os.getcwd()
 folder = "tensorboard"
 proc = None
-writer = SummaryWriter(folder)
+
 completed = "false"
 n_classes = 0
 
@@ -49,8 +52,7 @@ def calc_gradient_penalty(x, y_pred_sum):
     return gradient_penalty
 
 # model should have model.datain, model.update_embeddings
-def train(model,n_classes, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav):
-
+def train(model,n_classes, train_loader,val_loader,lr,lam,weight_d, epochs,opt, cudav, writer):
   learning_rate = lr
   momentum = 0.1
   weight_decay = weight_d
@@ -226,16 +228,17 @@ def validation(model,val_loader,cudav):
 
 
 def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
-    global proc, model, writer, use_gpu, n_classes
+    global proc, model, writer, use_gpu, n_classes, writer, completed
 
     # tensorboard
     # os.system("tensorboard --reload_interval 15 --logdir tensorboard")
     if proc!=None:
         proc.kill()
-    proc = subprocess.Popen(["tensorboard","--reload_interval","15", "--logdir",folder])
+    proc = subprocess.Popen("python -m tensorboard.main --logdir "+ folder, shell=True)
     current_app.logger.info("tensorflow launched \n")
-    global completed
+    writer = SummaryWriter(folder)
     completed = "true"
+
 
     root_dir = os.path.dirname(os.path.realpath(__file__))
     train_path = os.path.join(root_dir, '..', 'data', 'split', 'train')
@@ -246,7 +249,6 @@ def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,cent
 
     model = makemodel(layers, n_classes, centroid_size)
     current_app.logger.info("model is made \n")
-
     for _,data,target in train_loader:
       writer.add_embedding(data.view(data.shape[0],-1),metadata=target,label_img=data)
       writer.add_graph(model, data)
@@ -254,8 +256,10 @@ def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,cent
     if use_gpu:
         model.cuda()
     current_app.logger.info("about to start training \n")
-    train(model, n_classes,train_loader,valid_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu)
+    train(model, n_classes,train_loader,valid_loader,learning_rate,lm,weight_decay, epochs, opt, use_gpu, writer)
     validation(model,valid_loader,use_gpu)
+    model = model.cpu()
+    writer.close()
 
 
 
@@ -263,10 +267,13 @@ def makemodel(layers, n_classes, embedding_size):
   global hidden
   modules = []
   hidden = 0
+  c=0
   for layer in layers:
     if layer == "Conv":
-      hidden += 1
-      modules.append(nn.Conv2d(128, 128, kernel_size=3, padding=1))
+      if c>2:
+          hidden += 1
+          modules.append(nn.Conv2d(128, 128, kernel_size=3, padding=1))
+      c+=1
     elif layer == "B_Norm":
       modules.append(nn.BatchNorm2d(128))
     elif layer == "Relu":
