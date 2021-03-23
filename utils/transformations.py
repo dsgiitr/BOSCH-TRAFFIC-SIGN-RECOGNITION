@@ -323,7 +323,7 @@ def _generate_random_lines(imshape,slant,drop_length):
         https://docs.opencv.org/master/
     """
     drops=[]
-    for i in range(1500): ## If You want heavy rain, try increasing this
+    for i in range(50): ## If You want heavy rain, try increasing this
         if slant<0:
             x= np.random.randint(slant,imshape[1])
         else:
@@ -350,14 +350,14 @@ def add_rain(img):
     imshape = img.shape
     slant_extreme=10
     slant= np.random.randint(-slant_extreme,slant_extreme)
-    drop_length=20
-    drop_width=2
+    drop_length=2
+    drop_width=1
     drop_color=(200,200,200) ## a shade of gray
-    rain_drops= _generate_random_lines(imshape,slant,drop_length)
+    rain_drops= generate_random_lines(imshape,slant,drop_length)
     for rain_drop in rain_drops:
         cv2.line(img,(rain_drop[0],rain_drop[1]),(rain_drop[0]+slant,rain_drop[1]+drop_length),drop_color,drop_width)
-    img= cv2.blur(img,(7,7)) ## rainy view are blurry
-    brightness_coefficient = 0.7 ## rainy days are usually shady
+    img= cv2.blur(img,(2,2)) ## rainy view are blurry
+    brightness_coefficient = 0.8 ## rainy days are usually shady
     img_HLS = cv2.cvtColor(img,cv2.COLOR_RGB2HLS) ## Conversion to HLS
     img_HLS[:,:,1] = img_HLS[:,:,1]*brightness_coefficient ## scale pixel values down for channel 1(Lightness)
     img_RGB = cv2.cvtColor(img_HLS,cv2.COLOR_HLS2RGB) ## Conversion to RGB
@@ -427,14 +427,10 @@ def add_fog(img):
     Source:
         https://docs.opencv.org/master/
     """
-    img_HLS = cv2.cvtColor(img,cv2.COLOR_RGB2HLS) ## Conversion to HLS
-    mask = np.zeros_like(img)
     imshape = img.shape
-    hw=100
-    img_HLS[:,:,1]=img_HLS[:,:,1]*0.8
-    haze_list= _generate_random_blur_coordinates(imshape,hw)
-    for haze_points in haze_list:
-        img_HLS[:,:,1][img_HLS[:,:,1]>255]  = 255 ##Sets all values above 255 to 255
-        img_HLS= _add_blur(img_HLS, haze_points[0],haze_points[1], hw) ## adding all shadow polygons on empty mask, single 255 denotes only red channel
+    img= cv2.blur(img,(3,3)) ## foggy view are blurry
+    brightness_coefficient = 0.7 ## foggy days are usually shady
+    img_HLS = cv2.cvtColor(img,cv2.COLOR_RGB2HLS) ## Conversion to HLS
+    img_HLS[:,:,1] = img_HLS[:,:,1]*brightness_coefficient ## scale pixel values down for channel 1(Lightness)
     img_RGB = cv2.cvtColor(img_HLS,cv2.COLOR_HLS2RGB) ## Conversion to RGB
     return img_RGB
