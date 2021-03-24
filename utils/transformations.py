@@ -353,7 +353,7 @@ def add_rain(img):
     drop_length=2
     drop_width=1
     drop_color=(200,200,200) ## a shade of gray
-    rain_drops= generate_random_lines(imshape,slant,drop_length)
+    rain_drops= _generate_random_lines(imshape,slant,drop_length)
     for rain_drop in rain_drops:
         cv2.line(img,(rain_drop[0],rain_drop[1]),(rain_drop[0]+slant,rain_drop[1]+drop_length),drop_color,drop_width)
     img= cv2.blur(img,(2,2)) ## rainy view are blurry
