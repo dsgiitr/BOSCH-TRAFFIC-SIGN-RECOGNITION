@@ -229,12 +229,13 @@ def validation(model,val_loader,cudav):
 
 def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,centroid_size = 100,lm = 0.1,weight_decay = 0.0001,opt = "Adam"):
     global proc, model, writer, use_gpu, n_classes, writer, completed
-
+    if use_gpu:
+        torch.cuda.empty_cache()
     # tensorboard
     # os.system("tensorboard --reload_interval 15 --logdir tensorboard")
     if proc!=None:
         proc.kill()
-    proc = subprocess.Popen("python -m tensorboard.main --logdir "+ folder, shell=True)
+    proc = subprocess.Popen(["tensorboard" ,"--reload_interval", "15", "--logdir",folder])
     current_app.logger.info("tensorflow launched \n")
     writer = SummaryWriter(folder)
     completed = "true"
@@ -260,6 +261,8 @@ def runtraining(layers, epochs = 15, batch_size = 64,learning_rate = 0.0003,cent
     validation(model,valid_loader,use_gpu)
     model = model.cpu()
     writer.close()
+    if use_gpu:
+        torch.cuda.empty_cache()
 
 
 
