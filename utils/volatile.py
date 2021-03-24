@@ -463,7 +463,8 @@ def apply_16(data):
             now = datetime.now()
             current_time = now.strftime("%H%M%S%f")
             if "_" in name:
-                name = name.split("_")[0]
+                name_list = name.split("_")
+                name = "_".join(name_list[:-1])
             new_img_name = name + "_" + str(current_time) + "." + ext
             new_img_path = os.path.join(main_path, new_img_name)
             # current_app.logger.info(new_img_path)
@@ -498,7 +499,8 @@ def apply_batch(data):
                                 now = datetime.now()
                                 current_time = now.strftime("%H%M%S%f")
                                 if "_" in name:
-                                    name = name.split("_")[0]
+                                    name_list = name.split("_")
+                                    name = "_".join(name_list[:-1])
                                 new_img_name = name + "_" + \
                                     str(current_time) + "." + ext
                                 new_img_path = os.path.join(
@@ -816,7 +818,6 @@ def generate_data_stats_dict(path):
     for _, classes, _ in os.walk(path):
         classes.sort(key = lambda x:int(x))
         for class_name in classes:
-            classes.sort()
             class_path = os.path.join(path, str(class_name))
             labels.append(str(class_name))
             for _, _, images in os.walk(class_path):
