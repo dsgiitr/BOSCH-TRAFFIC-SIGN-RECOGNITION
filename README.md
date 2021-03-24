@@ -7,6 +7,24 @@ This is one such problem and solving it would take us one step closer to L5 auto
 
 The developed software package **“Analysis.ai”** is designed to help an analyst to build datasets for traffic sign recognition, implement wide variety of augmentation and transformation techniques on the dataset with wide flexibility. Furthermore, the package provides user with a latest deep learning model E-DUQ clubbed with an Spatial Transformer Network (STN) to not only make a prediction but also give information regarding noise and confidence level of the prediction. The detailed analysis of the trained model has been done using uncertainty, architecture and augmentative analysis. 
 
+## Setup
+
+Make sure you have the latest version of python and pip3 installed.
+
+If you are an ubuntu user run:
+```bash
+sudo apt-get update
+sudo apt-get install -y libgl1-mesa-dev
+```
+
+Run the commands(for all OS users):
+```bash
+clone the repo and cd into it
+pip3 install pipenv
+pipenv install
+pipenv run api
+```
+
 ## DataSet Description
 
 ### German Traffic Sign Recognition(GTSR) Dataset
