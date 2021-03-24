@@ -52,3 +52,38 @@ The samples from the same are shown below.
 |                    Snow Effect                   |            add_snow()           |                                             Add Snow Effect to Image                                            |                                             -----                                            |
 |                    Rain Effect                   |            add_rain()           |                                             Add Rain Effect to Image                                            |                                             -----                                            |
 |                    Fog Effect                    |            add_fog()            |                                             Add Fog Effect to Image                                             |                                             -----                                            |
+
+## Deep Learning Model
+![alt text](photos/model.png)
+### STN Model
+Spatial transformer networks are a generalization of differentiable attention to any spatial transformation. Spatial transformer networks (STN for short) allow a neural network to learn how to perform spatial transformations on the input image in order to enhance the geometric invariance of the model. For example, it can crop a region of interest, scale and correct the orientation of an image. It can be a useful mechanism because CNNs are not invariant to rotation and scale and more general affine transformations.
+### E-DUQ
+Recently Gal et. al. ICML 2020 presented how a deterministic feed forward model can efficiently determine uncertainty using a RBF network based architecture and gradient penalty loss. 
+This model is called DUQ which predicts a “K” value between 0-1 for each class, 0 being completely uncertain and 1 completely certain, incase of an OoD sample DUQ can output 0 for all of the classes. K value is computed by the distance of a class specific feature vector from the corresponding centroid vector of that class in a kernel space.
+ In addition to DUQ we make model output noise as done by Gal et. al. NeurIPS 2016 to attenuate loss from erroneous labels and input features. We do this by predicting σ (length scale) along with features. We expect this σ to capture noise present in the sample. This simple extension to DUQ, we name it as E-DUQ, is able to perform well in terms of f1 score of classification as well provides analysis for noise in samples which is another crucial aspect for an intelligent driving system
+ 
+
+
+## Model Analysis
+
+The model analysis has been done to assist the analyst in finding problems in the model or dataset used.  The basic analysis can be divided into 4 basic sections: Evaluation, Uncertainty, Augmentative and Network Analysis. 
+
+### Evaluation Analysis
+The evaluation analysis has been done using various techniques including F1 Score, Precision, ROC curves, and confusion matrix. 
+![alt text](photos/F1SCORE.png)
+
+### Uncertainty Analysis
+
+In general for an intelligent system there can be two types of unknowns, known unknowns and unknown unknowns technically we call them aleatoric and epistemic uncertainty respectively. Aleatoric uncertainty is the inherent ambiguity or noise present in the input whereas epistemic uncertainty is the lack of knowledge for our model i.e. if our model was never shown data points in  certain region of space (OoD) then it becomes region of epistemic uncertainty for the model.
+![alt text](photos/uncertainity.png)
+
+### Augmentative Analysis
+
+The augmentative analysis feature allows users to analyze the effect of various augmentations on the model. The User can select images from the dataset and then further set any augmentation from rotation, blur, sharpen, and noise. Users can see the effect of these on the image in-form of a modified image. The STN focuses on the image and Grad-CAM is also shown on the image. Additionally, we also show Grad-CAM with noise on the image that helps the user to see sections of the image that are responsible for noise in the image. 
+![alt text](photos/augmentation.png)
+
+### Network Analysis
+
+Network analysis is used to analyze the architecture efficiency of deep learning models. The distribution of weights and bias of each convolution layer are plotted. If the range of weights decreases consecutively, then the model is optimal. If distribution upper and lower limits don’t go almost asymptotic, more layers can be added to the model. A layer showing a sudden high range of weights causes problems in feature extraction, then try to decrease the layer’s kernel size. If the Last layer tends to have a bimodal distribution, then that model is best.
+![alt text](photos/architecture.png)
+
