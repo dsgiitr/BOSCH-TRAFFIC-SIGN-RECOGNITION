@@ -28,7 +28,7 @@ def name_split(data_req):
         path = data[0]
         class_name = data[1]
         img = data[2]
-        img_name, ext = img.split(".")
+        img_name, ext = os.path.splitext(img)[0], os.path.splitext(img)[1][1:]
         data_df.append([path, class_name, img_name, ext])
     df = pd.DataFrame(
         data_df, columns=["Path", "Class Name", "Image Name", "Extension"]
@@ -459,7 +459,7 @@ def apply_16(data):
             # current_app.logger.info(path_img)
             img = cv2.imread(path_img)
             img_new = apply_augmentation(img, aug_type, aug_params)
-            name, ext = img_name.split(".")
+            name, ext = os.path.splitext(img_name)[0], os.path.splitext(img_name)[1][1:]
             now = datetime.now()
             current_time = now.strftime("%H%M%S%f")
             if "_" in name:
@@ -495,7 +495,7 @@ def apply_batch(data):
                                 img = cv2.imread(path_img)
                                 img_new = apply_augmentation(
                                     img, aug_type, aug_params)
-                                name, ext = img_name.split(".")
+                                name, ext = os.path.splitext(img_name)[0], os.path.splitext(img_name)[1][1:]
                                 now = datetime.now()
                                 current_time = now.strftime("%H%M%S%f")
                                 if "_" in name:
