@@ -1,10 +1,13 @@
-flask
-flask-cors
-numpy
 pandas
-sklearn
-torch
-torchvision
-opencv-python
-PyWavelets
+Flask==1.1.2
+Flask_Cors==3.0.10
+numpy==1.20.1
+PyWavelets==1.1.1
+opencv_python==4.5.1.48
+matplotlib==3.3.4
+Pillow==8.1.2
+scikit_learn==0.24.1
 tensorboard
+-i https://download.pytorch.org/whl/torch_stable.html
+torch==1.8.0+cu111
+torchvision==0.9.0+cu111 

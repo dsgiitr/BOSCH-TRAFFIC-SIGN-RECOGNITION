@@ -1,0 +1,32 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[[source]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/torch_stable.html"
+verify_ssl = false
+
+[scripts]
+api = "python api.py"
+
+
+[packages]
+pandas = "*"
+numpy = "==1.20.1"
+opencv-python = "==4.5.1.48"
+matplotlib = "==3.3.4"
+scikit-learn = "==0.24.1"
+tensorboard = "*"
+Flask = "==1.1.2"
+Flask-Cors = "==3.0.10"
+PyWavelets = "==1.1.1"
+Pillow = "==8.1.2"
+torch = "==1.8.0"
+torchvision = "==0.9.0" 
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"
