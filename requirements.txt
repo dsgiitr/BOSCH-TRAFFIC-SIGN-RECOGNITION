@@ -1,9 +1,10 @@
 flask
-opencv-python
+flask-cors
 numpy
 pandas
+sklearn
 torch
 torchvision
+opencv-python
 PyWavelets
 tensorboard
-sklearn
