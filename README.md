@@ -20,7 +20,7 @@ sudo apt-get install -y libgl1-mesa-dev python3-distutils
 Run the commands(for all OS users):
 ```bash
 clone the repo and cd into it
-pip3 install pipenv
+python3 -m pip install pipenv
 pipenv install
 pipenv run api
 ```
