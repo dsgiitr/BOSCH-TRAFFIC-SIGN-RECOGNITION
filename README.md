@@ -14,7 +14,7 @@ Make sure you have the latest version of python and pip3 installed.
 If you are an ubuntu user run:
 ```bash
 sudo apt-get update
-sudo apt-get install -y libgl1-mesa-dev
+sudo apt-get install -y libgl1-mesa-dev python3-distutils
 ```
 
 Run the commands(for all OS users):
