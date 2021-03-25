@@ -24,7 +24,17 @@ Run the commands(for all OS users):
 clone the repo and cd into it
 python3 -m pip install pipenv
 pipenv install
-pipenv run api
+```
+If you have GPU support, install pytorch, torchvision, torchaudio with CUDA support in pipenv environment.
+For e.g., if you have CUDA 11 use the following command.
+```bash
+pipenv shell
+pip install torch==1.8.0+cu111 torchvision==0.9.0+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
+```
+
+Finally run the backend using:
+```bash
+pipenv run start
 ```
 
 ## DataSet Description
