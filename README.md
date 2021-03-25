@@ -9,8 +9,8 @@ The developed software package **“Analysis.ai”** is designed to help an anal
 
 ## Setup
 
-Make sure you have the latest version of python and pip3 installed.
-
+Make sure you have the **Python3.9** and pip3 installed.
+**Note that Python v 3.9 is important**
 If you are an ubuntu user run:
 ```bash
 sudo apt-get update
