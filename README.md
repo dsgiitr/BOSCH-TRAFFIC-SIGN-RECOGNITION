@@ -1,6 +1,6 @@
 # BOSCH's TRAFFIC SIGN RECOGNITION
 
-![alt text](photos/front.gif)
+
 
 With the advancements in AI and the development of computing capabilities in the 21st century, millions of processes around the globe are being automated like never before. The automobile industry is transforming,and the day isn't far when fully autonomous vehicles would make transportation extremely inexpensive andeffective. But to reach this ambitious goal, which aims to change the very foundations of transportation as anindustry, we need to first solve a few challenging problems which will help a vehicle make decisions by itself.
 This is one such problem and solving it would take us one step closer to L5 autonomy.
